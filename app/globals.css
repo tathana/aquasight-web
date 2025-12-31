@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ocean-dark: #020617;
+  /* Deepest Navy */
+  --color-ocean-card: #0f172a;
+  /* Slate 900 */
+  --color-ocean-light: #f8fafc;
+  /* Slate 50 */
+
+  --color-accent-cyan: #06b6d4;
+  /* Cyan 500 */
+  --color-accent-glow: #22d3ee;
+  /* Cyan 400 */
+
+  --color-status-pass: #10b981;
+  /* Emerald 500 */
+  --color-status-warning: #f59e0b;
+  /* Amber 500 */
+  --color-status-fail: #f97316;
+  /* Orange 500 */
+}
+
+:root {
+  --background: var(--color-ocean-dark);
+  --foreground: var(--color-ocean-light);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* =========================================
+   🌊 Marine Animations
+   ========================================= */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes oceanPulse {
+
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.98);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+    text-shadow: 0 0 15px var(--color-accent-cyan);
+  }
+}
+
+.animate-ocean-pulse {
+  animation: oceanPulse 3s ease-in-out infinite;
+}
+
+/* Stagger delays for sequential loading feel */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
