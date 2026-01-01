@@ -79,7 +79,7 @@ export default function WaterQualityChart({
   }, [mergedData, series]);
 
   return (
-    <div className="w-full h-[440px] p-2 space-y-4">
+    <div className="w-full h-[440px] p-2 pb-9 md:pb-2 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-[var(--color-accent-glow)] flex items-center gap-2">
@@ -100,7 +100,10 @@ export default function WaterQualityChart({
       </div>
 
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={mergedData}>
+        <LineChart
+          data={mergedData}
+          margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
           {/* ===============================
               Axes & Grid
@@ -130,7 +133,19 @@ export default function WaterQualityChart({
             itemStyle={{ color: "#cbd5e1" }}
             labelStyle={{ color: "#94a3b8", marginBottom: "0.5rem" }}
           />
-          <Legend wrapperStyle={{ paddingTop: "20px" }} />
+          <Legend
+            verticalAlign="top"
+            align="right"
+            height={36}
+            iconType="circle"
+            wrapperStyle={{
+              top: -5,
+              right: 0,
+              fontSize: "11px",
+              opacity: 0.8,
+              paddingBottom: "10px"
+            }}
+          />
 
           {/* ===============================
               Forecast Shading (2025+)

@@ -201,7 +201,7 @@ export default function Page() {
         )}
 
         {series.length > 0 && (
-          <section className="rounded-xl border border-slate-800 bg-[var(--color-ocean-card)] p-6 shadow-xl animate-fade-in-up delay-200">
+          <section className="rounded-xl border border-slate-800 bg-[var(--color-ocean-card)] p-6 shadow-xl animate-fade-in-up delay-200 overflow-hidden">
             <WaterQualityChart
               series={series}
               parameter={parameter}
