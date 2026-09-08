@@ -50,7 +50,7 @@ export default function InteractiveMap({
 
   const activeStation = STATIONS_DATA.find((s) => s.id === station) || STATIONS_DATA[0];
   const stationCode = activeStation.id === 'TP11' ? 'TP011' : activeStation.id;
-  const imageSrc = `/api/map_png_proxy?station=${stationCode}&year=${year}&layer=chl_a&v=2`;
+  const imageSrc = `/api/map_png_proxy?station=${stationCode}&year=${year}&layer=chl_a&v=3`;
 
   useEffect(() => {
     setImgError(false);

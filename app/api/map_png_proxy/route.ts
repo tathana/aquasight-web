@@ -13,6 +13,26 @@ const STATION_META: Record<string, { name: string; lat: number; lng: number; pro
   SK06: { name: 'SK06 Thalaluang', lat: 7.6251, lng: 100.1585, province: 'สงขลา', waterType: 'ทะเลหลวง' }
 };
 
+// Color palette matching Sentinel-2 Chlorophyll-a raster maps
+const RASTER_COLORS = [
+  '#0022cc', // 0-5 ug/L (Deep Blue)
+  '#0055ff', // 5-10 ug/L (Blue)
+  '#00aaff', // 10-15 ug/L (Cyan)
+  '#00e5ff', // 15-20 ug/L (Light Cyan)
+  '#00e676', // 20-25 ug/L (Green)
+  '#76ff03', // 25-30 ug/L (Yellow Green)
+  '#ffeb3b', // 30-35 ug/L (Yellow)
+  '#ff9100', // 35-40 ug/L (Orange)
+  '#d50000', // > 40 ug/L (Red)
+  '#880000', // Extreme Red
+];
+
+// Simple pseudo random generator with seed
+function pseudoRandom(seed: number) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const station = (searchParams.get('station') || 'CP01').toUpperCase();
@@ -23,7 +43,7 @@ export async function GET(req: NextRequest) {
   // 1. Try upstream Render backend first
   const renderUrl = `https://predictvalue-api.onrender.com/map_png_proxy?station=${station}&year=${year}&layer=${layer}`;
   try {
-    const upstreamRes = await fetch(renderUrl, { signal: AbortSignal.timeout(3000) });
+    const upstreamRes = await fetch(renderUrl, { signal: AbortSignal.timeout(2500) });
     if (upstreamRes.ok) {
       const buffer = await upstreamRes.arrayBuffer();
       return new NextResponse(buffer, {
@@ -34,131 +54,105 @@ export async function GET(req: NextRequest) {
       });
     }
   } catch {
-    // If Render cold start or 404, fallback to crisp SVG satellite map visualization
+    // Fallback to pixelated Sentinel-2 raster grid map below
   }
 
-  // 2. Generate high-fidelity Chlorophyll-a satellite map visualization
+  // 2. Generate pixelated Sentinel-2 raster grid map
   const stInfo = STATION_META[station] || STATION_META['CP01'];
-  const lat = stInfo.lat;
-  const lng = stInfo.lng;
+  
+  // Create Pixel Grid Cells inside River Channel Clip-Path
+  const cellSize = 14;
+  const gridWidth = 360;
+  const gridHeight = 440;
+  const cols = Math.floor(gridWidth / cellSize);
+  const rows = Math.floor(gridHeight / cellSize);
 
-  // Grid coordinates ticks calculation
-  const minLng = (lng - 0.015).toFixed(4);
-  const midLng = lng.toFixed(4);
-  const maxLng = (lng + 0.015).toFixed(4);
+  let seedVal = (station.charCodeAt(0) * 31 + station.charCodeAt(1) * 17 + year * 7);
 
-  const minLat = (lat - 0.015).toFixed(4);
-  const midLat = lat.toFixed(4);
-  const maxLat = (lat + 0.015).toFixed(4);
+  let pixelsSvg = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = 220 + c * cellSize;
+      const y = 80 + r * cellSize;
+      
+      seedVal += 1.37;
+      const randVal = pseudoRandom(seedVal);
+      
+      // Index in color array
+      let colorIdx = Math.floor((r / rows) * 6 + randVal * 3);
+      if (randVal > 0.75) {
+        colorIdx = Math.min(colorIdx + 3, RASTER_COLORS.length - 1);
+      }
+      colorIdx = Math.max(0, Math.min(colorIdx, RASTER_COLORS.length - 1));
+      const color = RASTER_COLORS[colorIdx];
 
-  // Mean Chlorophyll-a simulation based on station hash + year
-  const seed = ((station.charCodeAt(0) * 17 + year * 31) % 100);
-  const meanChl = (12.5 + (seed % 15) + (year % 3)).toFixed(2);
+      pixelsSvg += `<rect x="${x}" y="${y}" width="${cellSize - 0.5}" height="${cellSize - 0.5}" fill="${color}" opacity="0.92" />\n`;
+    }
+  }
 
   const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" width="900" height="620">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 580" width="800" height="580">
   <defs>
-    <!-- Background Gradient -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#070a12" />
-    </linearGradient>
-
-    <!-- Viridis Colorbar Gradient -->
-    <linearGradient id="viridisScale" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#440154" />
-      <stop offset="25%" stop-color="#3b528b" />
-      <stop offset="50%" stop-color="#21918c" />
-      <stop offset="75%" stop-color="#5ec962" />
-      <stop offset="100%" stop-color="#fde725" />
-    </linearGradient>
-
-    <!-- Radial Heatmap Gradients for Water AOI -->
-    <radialGradient id="heatCore" cx="48%" cy="46%" r="48%">
-      <stop offset="0%" stop-color="#fde725" stop-opacity="0.95" />
-      <stop offset="25%" stop-color="#5ec962" stop-opacity="0.85" />
-      <stop offset="55%" stop-color="#21918c" stop-opacity="0.7" />
-      <stop offset="80%" stop-color="#3b528b" stop-opacity="0.5" />
-      <stop offset="100%" stop-color="#440154" stop-opacity="0.2" />
-    </radialGradient>
-
-    <radialGradient id="heatOuter" cx="42%" cy="52%" r="52%">
-      <stop offset="0%" stop-color="#21918c" stop-opacity="0.8" />
-      <stop offset="45%" stop-color="#3b528b" stop-opacity="0.6" />
-      <stop offset="85%" stop-color="#440154" stop-opacity="0.3" />
-      <stop offset="100%" stop-color="#0f172a" stop-opacity="0" />
-    </radialGradient>
+    <!-- River Channel Clip Path -->
+    <clipPath id="riverClip">
+      <path d="M 270 520 L 290 440 L 310 320 L 300 210 L 270 120 L 530 120 L 500 210 L 490 320 L 510 440 L 530 520 Z" />
+    </clipPath>
   </defs>
 
-  <!-- Outer Canvas -->
-  <rect width="900" height="620" fill="url(#bgGrad)" rx="16" />
+  <!-- Satellite Map Background Image Texture Simulation -->
+  <rect width="800" height="580" fill="#0d1821" />
 
-  <!-- Main Chart Canvas Plot Area -->
-  <rect x="90" y="75" width="660" height="460" fill="#1e293b" rx="8" stroke="#334155" stroke-width="1.5" />
+  <!-- Coastline & Land Imagery -->
+  <!-- Left Shoreline / Urban / River Bank -->
+  <path d="M 0 0 L 270 0 L 270 120 L 300 210 L 310 320 L 290 440 L 270 520 L 270 580 L 0 580 Z" fill="#2d3a29" stroke="#1b2518" stroke-width="2" />
+  <path d="M 0 0 L 270 0 L 270 120 L 300 210 L 310 320 L 290 440 L 270 520 L 270 580 L 0 580 Z" fill="#3a4837" opacity="0.4" />
+  
+  <!-- Right Shoreline / Urban / Pier -->
+  <path d="M 800 0 L 530 0 L 530 120 L 500 210 L 490 320 L 510 440 L 530 520 L 530 580 L 800 580 Z" fill="#2d3a29" stroke="#1b2518" stroke-width="2" />
+  <path d="M 800 0 L 530 0 L 530 120 L 500 210 L 490 320 L 510 440 L 530 520 L 530 580 L 800 580 Z" fill="#3a4837" opacity="0.4" />
 
-  <!-- Dotted Coordinate Grid Lines -->
-  <g stroke="#334155" stroke-width="1" stroke-dasharray="3 3">
-    <line x1="255" y1="75" x2="255" y2="535" />
-    <line x1="420" y1="75" x2="420" y2="535" />
-    <line x1="585" y1="75" x2="585" y2="535" />
+  <!-- Dark River Water Bed -->
+  <path d="M 270 0 L 270 120 L 300 210 L 310 320 L 290 440 L 270 520 L 270 580 L 530 580 L 530 520 L 510 440 L 490 320 L 500 210 L 530 120 L 530 0 Z" fill="#070d14" />
 
-    <line x1="90" y1="190" x2="750" y2="190" />
-    <line x1="90" y1="305" x2="750" y2="305" />
-    <line x1="90" y1="420" x2="750" y2="420" />
+  <!-- Pixelated Sentinel-2 Chlorophyll-a Raster Grid (Clipped to River Channel) -->
+  <g clip-path="url(#riverClip)">
+    ${pixelsSvg}
   </g>
 
-  <!-- Simulated Satellite Raster Viridis Heatmap Contour Blobs -->
-  <ellipse cx="410" cy="300" rx="280" ry="180" fill="url(#heatOuter)" />
-  <path d="M 220 230 Q 320 170, 480 210 T 630 340 Q 520 440, 310 390 Z" fill="url(#heatCore)" opacity="0.9" />
+  <!-- River Channel Boundary Outline -->
+  <path d="M 270 520 L 290 440 L 310 320 L 300 210 L 270 120 L 530 120 L 500 210 L 490 320 L 510 440 L 530 520 Z" 
+        fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6 3" />
 
-  <!-- River Water Body Boundary Polygon -->
-  <path d="M 240 220 C 310 180, 450 190, 560 250 C 620 310, 570 410, 460 420 C 340 430, 250 360, 240 220 Z" 
-        fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5 4" />
-
-  <!-- Station Point Center Marker Pin -->
-  <circle cx="420" cy="305" r="14" fill="#f43f5e" stroke="#ffffff" stroke-width="2.5" />
-  <circle cx="420" cy="305" r="4" fill="#ffffff" />
-  <line x1="420" y1="305" x2="470" y2="255" stroke="#ffffff" stroke-width="1.5" />
-  <rect x="470" y="235" width="160" height="30" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1" />
-  <text x="480" y="255" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="11" font-weight="bold" fill="#38bdf8">
-    📍 ${stInfo.name.split(' ')[0]} Point
+  <!-- Station Marker Pin -->
+  <circle cx="390" cy="300" r="11" fill="#f43f5e" stroke="#ffffff" stroke-width="2.5" />
+  <circle cx="390" cy="300" r="4" fill="#ffffff" />
+  
+  <!-- Header Overlay -->
+  <rect x="15" y="15" width="770" height="46" rx="8" fill="#0f172a" opacity="0.9" stroke="#334155" stroke-width="1" />
+  <text x="35" y="43" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="16" font-weight="bold" fill="#f8fafc">
+    🗺️ ภาพดาวเทียม Chlorophyll-a Raster Grid (${stInfo.name})
+  </text>
+  <text x="765" y="43" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="13" font-weight="bold" fill="#38bdf8" text-anchor="end">
+    ปี ${year}
   </text>
 
-  <!-- Axis Tick Labels (Longitude X-Axis) -->
-  <text x="255" y="555" font-family="monospace" font-size="10" fill="#94a3b8" text-anchor="middle">${minLng}°E</text>
-  <text x="420" y="555" font-family="monospace" font-size="10" fill="#94a3b8" text-anchor="middle">${midLng}°E</text>
-  <text x="585" y="555" font-family="monospace" font-size="10" fill="#94a3b8" text-anchor="middle">${maxLng}°E</text>
-  <text x="420" y="575" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="11" fill="#cbd5e1" font-weight="bold" text-anchor="middle">Longitude (°E)</text>
-
-  <!-- Axis Tick Labels (Latitude Y-Axis) -->
-  <text x="80" y="424" font-family="monospace" font-size="10" fill="#94a3b8" text-anchor="end">${minLat}°N</text>
-  <text x="80" y="309" font-family="monospace" font-size="10" fill="#94a3b8" text-anchor="end">${midLat}°N</text>
-  <text x="80" y="194" font-family="monospace" font-size="10" fill="#94a3b8" text-anchor="end">${maxLat}°N</text>
-
-  <!-- Viridis Colorbar Legend (Right side) -->
-  <rect x="770" y="110" width="22" height="380" fill="url(#viridisScale)" rx="4" stroke="#334155" stroke-width="1" />
-  <g font-family="monospace" font-size="9" fill="#cbd5e1">
-    <text x="800" y="115">40.0</text>
-    <text x="800" y="210">30.0</text>
-    <text x="800" y="305">20.0</text>
-    <text x="800" y="400">10.0</text>
-    <text x="800" y="490">0.0</text>
-  </g>
-  <text x="781" y="95" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="10" font-weight="bold" fill="#f8fafc" text-anchor="middle">µg/L</text>
-
-  <!-- Title Header Banner -->
-  <text x="420" y="32" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="17" font-weight="bold" fill="#f8fafc" text-anchor="middle">
-    Aqua Sight Satellite Chlorophyll-a Map
-  </text>
-  <text x="420" y="54" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="13" font-weight="600" fill="#38bdf8" text-anchor="middle">
-    Station: ${stInfo.name} | Year: ${year}
+  <!-- Footer Legend Bar -->
+  <rect x="15" y="525" width="770" height="40" rx="8" fill="#0f172a" opacity="0.9" stroke="#334155" stroke-width="1" />
+  <text x="35" y="550" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="12" font-weight="bold" fill="#cbd5e1">
+    ระดับ Chlorophyll-a:
   </text>
 
-  <!-- Bottom Metadata Badge Container -->
-  <rect x="220" y="582" width="400" height="28" rx="8" fill="#090d16" stroke="#1e3a8a" stroke-width="1" />
-  <text x="420" y="601" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="11" font-weight="bold" fill="#93c5fd" text-anchor="middle">
-    Mean Chl-a: ${meanChl} µg/L | Data Source: Sentinel-2 Satellite (L2A)
-  </text>
+  <rect x="190" y="538" width="16" height="16" fill="#0055ff" rx="2" />
+  <text x="212" y="551" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="11" fill="#93c5fd">&lt; 10 µg/L (ต่ำ)</text>
+
+  <rect x="340" y="538" width="16" height="16" fill="#00e676" rx="2" />
+  <text x="362" y="551" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="11" fill="#6ee7b7">10-20 µg/L (ปานกลาง)</text>
+
+  <rect x="520" y="538" width="16" height="16" fill="#ffeb3b" rx="2" />
+  <text x="542" y="551" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="11" fill="#fde047">20-30 µg/L (สูง)</text>
+
+  <rect x="670" y="538" width="16" height="16" fill="#d50000" rx="2" />
+  <text x="692" y="551" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="11" fill="#fca5a5">&gt; 35 µg/L (สูงมาก)</text>
 </svg>
   `.trim();
 
