@@ -1,34 +1,4 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "AquaSight | Coastal Water Quality Monitoring",
-  description: "Advanced coastal water quality monitoring and forecasting system.",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
-  );
-}
+import type { Metadata } from 'next';
+import './globals.css';
+export const metadata: Metadata={title:'Aqua Sight · แชทคุณภาพน้ำ',description:'สนทนาเพื่อดูข้อมูลคุณภาพน้ำ รายเดือน ภาพแผนที่ และผลพยากรณ์ Aqua Sight'};
+export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){return <html lang="th"><body>{children}</body></html>;}
