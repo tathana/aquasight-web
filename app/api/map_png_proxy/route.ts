@@ -38,22 +38,6 @@ export async function GET(req: NextRequest) {
   const year = parseInt(yearStr, 10) || 2026;
   const layer = searchParams.get('layer') || 'chl_a';
 
-  // 1. Try upstream Render backend first
-  const renderUrl = `https://predictvalue-api.onrender.com/map_png_proxy?station=${station}&year=${year}&layer=${layer}`;
-  try {
-    const upstreamRes = await fetch(renderUrl, { signal: AbortSignal.timeout(2000) });
-    if (upstreamRes.ok) {
-      const buffer = await upstreamRes.arrayBuffer();
-      return new NextResponse(buffer, {
-        headers: {
-          'Content-Type': 'image/png',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-        },
-      });
-    }
-  } catch {
-    // Fallback to real satellite imagery + raster grid below
-  }
 
   // 2. Generate Satellite Imagery + Sentinel-2 Raster Grid Map
   const stInfo = STATION_META[station] || STATION_META['CP01'];
@@ -62,6 +46,18 @@ export async function GET(req: NextRequest) {
 
   // Real ArcGIS Satellite Aerial Photo URL for requested station coordinates
   const satelliteTileUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${(lng - 0.012).toFixed(4)},${(lat - 0.009).toFixed(4)},${(lng + 0.012).toFixed(4)},${(lat + 0.009).toFixed(4)}&bboxSR=4326&imageSR=4326&size=800,580&format=png&f=image`;
+
+  // Fetch the satellite photo on the server side and convert to Base64 data URI to prevent browser SVG image security blocks!
+  let base64SatImage = '';
+  try {
+    const satRes = await fetch(satelliteTileUrl, { signal: AbortSignal.timeout(2800) });
+    if (satRes.ok) {
+      const satBuf = await satRes.arrayBuffer();
+      base64SatImage = `data:image/png;base64,${Buffer.from(satBuf).toString('base64')}`;
+    }
+  } catch {
+    // If external fetch fails, fallback SVG texture will be used below
+  }
 
   // Create Pixel Grid Cells inside River Channel Clip-Path
   const cellSize = 14;
@@ -102,8 +98,15 @@ export async function GET(req: NextRequest) {
     </clipPath>
   </defs>
 
-  <!-- Real ArcGIS World Imagery Satellite Aerial Photo Background -->
-  <image href="${satelliteTileUrl}" width="800" height="580" preserveAspectRatio="none" />
+  ${base64SatImage ? `
+    <!-- Embedded Real ArcGIS World Imagery Satellite Aerial Photo -->
+    <image href="${base64SatImage}" width="800" height="580" preserveAspectRatio="none" />
+  ` : `
+    <!-- Fallback Realistic Coastal Satellite Imagery Texture -->
+    <rect width="800" height="580" fill="#0d1821" />
+    <path d="M 0 0 L 310 0 L 310 60 L 340 200 L 350 320 L 335 440 L 310 540 L 310 580 L 0 580 Z" fill="#2d3a29" stroke="#1b2518" stroke-width="2" />
+    <path d="M 800 0 L 510 0 L 510 60 L 480 200 L 470 320 L 490 440 L 510 540 L 510 580 L 800 580 Z" fill="#2d3a29" stroke="#1b2518" stroke-width="2" />
+  `}
 
   <!-- Semi-transparent River Water Bed Base -->
   <path d="M 320 540 L 335 440 L 350 320 L 335 200 L 305 60 L 515 60 L 485 200 L 470 320 L 485 440 L 500 540 Z" fill="#040914" opacity="0.75" />

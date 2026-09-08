@@ -44,15 +44,17 @@ export default function InteractiveMap({
   const [year, setYear] = useState<number>(selectedYear || 2026);
   const [layerType, setLayerType] = useState<'chl_a' | 'satellite' | 'street'>('chl_a');
   const [mobileDetailOpen, setMobileDetailOpen] = useState<boolean>(true);
+  const [imgLoading, setImgLoading] = useState<boolean>(true);
   const [imgError, setImgError] = useState<boolean>(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
 
   const activeStation = STATIONS_DATA.find((s) => s.id === station) || STATIONS_DATA[0];
   const stationCode = activeStation.id === 'TP11' ? 'TP011' : activeStation.id;
-  const imageSrc = `/api/map_png_proxy?station=${stationCode}&year=${year}&layer=chl_a&v=4`;
+  const imageSrc = `/api/map_png_proxy?station=${stationCode}&year=${year}&layer=chl_a&v=5`;
 
   useEffect(() => {
+    setImgLoading(true);
     setImgError(false);
   }, [station, year]);
 
@@ -272,18 +274,30 @@ export default function InteractiveMap({
                 <span style={{ fontSize: '11px', color: '#cbd5e1', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
                   🖼️ ภาพดาวเทียม Chlorophyll-a ({year})
                 </span>
-                <div style={{ borderRadius: '6px', overflow: 'hidden', border: '1px solid #334155', background: '#090d16', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {!imgError ? (
-                    <img
-                      src={imageSrc}
-                      alt={`Chlorophyll-a Map ${activeStation.id}`}
-                      onError={() => setImgError(true)}
-                      style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'contain' }}
-                    />
-                  ) : (
-                    <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                <div style={{ borderRadius: '6px', overflow: 'hidden', border: '1px solid #334155', background: '#090d16', minHeight: '160px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {imgLoading && !imgError && (
+                    <div style={{ position: 'absolute', inset: 0, background: '#090d16', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', zIndex: 5 }}>
                       <RefreshCw size={20} className="animate-spin text-sky-400" />
-                      <span>กำลังโหลดประมวลผลภาพดาวเทียม…</span>
+                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>กำลังโหลดภาพดาวเทียม…</span>
+                    </div>
+                  )}
+                  <img
+                    key={imageSrc}
+                    src={imageSrc}
+                    alt={`Chlorophyll-a Map ${activeStation.id}`}
+                    onLoad={() => { setImgLoading(false); setImgError(false); }}
+                    onError={() => { setImgLoading(false); setImgError(true); }}
+                    style={{ width: '100%', height: 'auto', display: imgError ? 'none' : 'block', maxHeight: '250px', objectFit: 'contain' }}
+                  />
+                  {imgError && (
+                    <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#f87171' }}>ไม่สามารถดาวน์โหลดภาพดาวเทียมได้</span>
+                      <button
+                        onClick={() => { setImgLoading(true); setImgError(false); }}
+                        style={{ padding: '3px 8px', background: '#1e293b', border: '1px solid #38bdf8', color: '#38bdf8', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                      >
+                        🔄 ลองใหม่อีกครั้ง
+                      </button>
                     </div>
                   )}
                 </div>
