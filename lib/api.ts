@@ -1,6 +1,7 @@
 import { TimeseriesResponse } from "@/types/water";
 
-const BASE_URL = "https://predictvalue-api.onrender.com";
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://predictvalue-api.onrender.com";
 
 export async function fetchTimeseries(
   station: string,
