@@ -1,8 +1,19 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Waves, MapPin, MessageCircle, RotateCcw, ChevronRight, Map as MapIcon, Sparkles } from 'lucide-react';
+import { ArrowUp, Waves, MapPin, MessageCircle, RotateCcw, ChevronRight, Map as MapIcon, BarChart3, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import InteractiveMap from '@/components/interactive-map';
+import Controls from '@/components/Controls';
+import StatusSummary from '@/components/StatusSummary';
+import InsightPanel from '@/components/InsightPanel';
+import WaterQualityChart from '@/components/WaterQualityChart';
+import ComparisonTable from '@/components/ComparisonTable';
+import { fetchTimeseries } from '@/lib/api';
+import { normalizeTimeseries } from '@/lib/normalize';
+import { evaluateWaterQuality, WaterStatus } from '@/lib/evaluate';
+import { WATER_QUALITY_CRITERIA, WaterParameter } from '@/lib/criteria';
+import { TimeSeriesPoint } from '@/types/water';
+import { StationResult } from '@/types/station';
 
 type Action = { label: string; value: string };
 type Context = { station?: string; year?: number; intent?: string };
@@ -24,9 +35,41 @@ const greeting: Message = {
   text: 'สวัสดีครับ ยินดีต้อนรับสู่ Aqua Sight\nระบบบริการข้อมูลและติดตามคุณภาพน้ำภาคใต้แบบครบวงจร\n\nท่านต้องการตรวจสอบข้อมูลสถานีใด หรือสอบถามเกณฑ์คุณภาพน้ำ สามารถเลือกเมนูด้านล่างได้เลยครับ',
   actions: [
     { label: 'ตรวจสอบคุณภาพน้ำ', value: 'ตรวจสอบคุณภาพน้ำ' },
+    { label: 'ดูแดชบอร์ด', value: 'ดูแดชบอร์ด' },
     { label: 'ดูแผนที่', value: 'ดูแผนที่' },
     { label: 'ถาม AI', value: 'คุยกับ AI' }
   ]
+};
+
+const PARAM_UNITS: Record<WaterParameter, string> = {
+  secchi: 'm',
+  chlorophyll_a: 'µg/L',
+  tsi: '',
+  turbidity: 'NTU',
+  salinity: 'ppt',
+  do: 'mg/L',
+  ph: '',
+};
+
+const PARAM_NAMES: Record<WaterParameter, string> = {
+  secchi: 'Secchi Depth (ความโปร่งใส)',
+  chlorophyll_a: 'Chlorophyll-a (คลอโรฟิลล์-เอ)',
+  tsi: 'Trophic State Index (TSI)',
+  turbidity: 'Turbidity (ความขุ่น)',
+  salinity: 'Salinity (ความเค็ม)',
+  do: 'Dissolved Oxygen (DO)',
+  ph: 'pH (ความเป็นกรด-ด่าง)',
+};
+
+const PURPOSE_NAMES: Record<string, string> = {
+  drinking: 'น้ำดื่ม / อุปโภคบริโภค',
+  agriculture: 'การเกษตร / ทำสวน',
+  aquaculture: 'การเพาะเลี้ยงสัตว์น้ำ',
+  shrimp: 'การเลี้ยงกุ้ง',
+  industry: 'อุตสาหกรรม',
+  recreation: 'นันทนาการ / ท่องเที่ยว',
+  ecosystem: 'รักษาระบบนิเวศ',
+  reuse: 'น้ำบำบัด / นำกลับมาใช้',
 };
 
 function formatBubbleText(text: string) {
@@ -40,12 +83,22 @@ function formatBubbleText(text: string) {
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'chat' | 'interactive-map'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'dashboard' | 'interactive-map'>('chat');
   const [messages, setMessages] = useState<Message[]>([greeting]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [context, setContext] = useState<Context>({});
   
+  // Dashboard state
+  const [dashboardStations, setDashboardStations] = useState<string[]>(['CP01', 'LS01', 'SK01']);
+  const [dashboardParameter, setDashboardParameter] = useState<WaterParameter>('do');
+  const [dashboardPurpose, setDashboardPurpose] = useState<keyof typeof WATER_QUALITY_CRITERIA>('drinking');
+  const [dashboardSeries, setDashboardSeries] = useState<{ station: string; data: TimeSeriesPoint[] }[]>([]);
+  const [dashboardResults, setDashboardResults] = useState<StationResult[]>([]);
+  const [overallStatus, setOverallStatus] = useState<WaterStatus>('pass');
+  const [failedStations, setFailedStations] = useState<string[]>([]);
+  const [loadingDashboard, setLoadingDashboard] = useState<boolean>(false);
+
   const bottom = useRef<HTMLDivElement>(null);
   const lock = useRef(false);
   const counter = useRef(1);
@@ -58,7 +111,72 @@ export default function Home() {
     }
   }, [messages, busy, activeTab]);
 
+  useEffect(() => {
+    if (activeTab !== 'dashboard') return;
+    let isMounted = true;
+    setLoadingDashboard(true);
+
+    async function loadDashboardData() {
+      try {
+        const seriesList: { station: string; data: TimeSeriesPoint[] }[] = [];
+        const resultsList: StationResult[] = [];
+        let worstStatus: WaterStatus = 'pass';
+        const failedList: string[] = [];
+
+        for (const station of dashboardStations) {
+          try {
+            const rawData = await fetchTimeseries(station, dashboardParameter);
+            const normalized = normalizeTimeseries(rawData);
+            seriesList.push({ station, data: normalized });
+
+            const evalResult = evaluateWaterQuality(normalized, dashboardParameter, dashboardPurpose);
+            resultsList.push({
+              station,
+              latest: evalResult.latest,
+              forecastAvg: evalResult.forecastAvg,
+              status: evalResult.status,
+            });
+
+            if (evalResult.status === 'fail') {
+              worstStatus = 'fail';
+              failedList.push(station);
+            } else if (evalResult.status === 'warning' && worstStatus !== 'fail') {
+              worstStatus = 'warning';
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch for station ${station}`, err);
+            seriesList.push({ station, data: [] });
+            resultsList.push({ station, status: 'pass' });
+          }
+        }
+
+        if (isMounted) {
+          setDashboardSeries(seriesList);
+          setDashboardResults(resultsList);
+          setOverallStatus(worstStatus);
+          setFailedStations(failedList);
+        }
+      } finally {
+        if (isMounted) setLoadingDashboard(false);
+      }
+    }
+
+    loadDashboardData();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, dashboardStations, dashboardParameter, dashboardPurpose]);
+
   async function send(value: string) {
+    if (value === 'ดูแดชบอร์ด') {
+      setActiveTab('dashboard');
+      return;
+    }
+    if (value === 'ดูแผนที่') {
+      setActiveTab('interactive-map');
+      return;
+    }
+
     if (lock.current || !value.trim()) return;
     lock.current = true;
     setBusy(true);
@@ -117,22 +235,30 @@ export default function Home() {
         {/* Desktop View Switcher */}
         <div style={{ padding: '8px 10px', background: '#091822', borderRadius: '12px', border: '1px solid #1a384c', margin: '18px 0 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <span style={{ fontSize: '11px', color: '#789cb0', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>เลือกโหมดการทำงาน</span>
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '4px' }}>
             <Button
               variant={activeTab === 'chat' ? 'default' : 'ghost'}
               size="sm"
-              style={{ flex: 1, fontSize: '12px', padding: '6px', background: activeTab === 'chat' ? '#0284c7' : 'transparent', color: '#ffffff' }}
+              style={{ flex: 1, fontSize: '11px', padding: '6px 4px', background: activeTab === 'chat' ? '#0284c7' : 'transparent', color: activeTab === 'chat' ? '#ffffff' : '#94a3b8' }}
               onClick={() => setActiveTab('chat')}
             >
-              <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชทบอท
+              <MessageCircle size={13} style={{ marginRight: '3px' }} /> แชท
+            </Button>
+            <Button
+              variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
+              size="sm"
+              style={{ flex: 1, fontSize: '11px', padding: '6px 4px', background: activeTab === 'dashboard' ? '#0284c7' : 'transparent', color: activeTab === 'dashboard' ? '#ffffff' : '#94a3b8' }}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              <BarChart3 size={13} style={{ marginRight: '3px' }} /> แดชบอร์ด
             </Button>
             <Button
               variant={activeTab === 'interactive-map' ? 'default' : 'ghost'}
               size="sm"
-              style={{ flex: 1, fontSize: '12px', padding: '6px', background: activeTab === 'interactive-map' ? '#0284c7' : 'transparent', color: activeTab === 'interactive-map' ? '#ffffff' : '#94a3b8' }}
+              style={{ flex: 1, fontSize: '11px', padding: '6px 4px', background: activeTab === 'interactive-map' ? '#0284c7' : 'transparent', color: activeTab === 'interactive-map' ? '#ffffff' : '#94a3b8' }}
               onClick={() => setActiveTab('interactive-map')}
             >
-              <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
+              <MapIcon size={13} style={{ marginRight: '3px' }} /> แผนที่
             </Button>
           </div>
         </div>
@@ -174,7 +300,110 @@ export default function Home() {
       </aside>
 
       {/* Main Panel View */}
-      {activeTab === 'interactive-map' ? (
+      {activeTab === 'dashboard' ? (
+        <section className="chat" style={{ padding: 0, height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0b1924', overflowY: 'auto' }}>
+          {/* Dashboard Header */}
+          <header style={{ padding: '14px 24px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: '#0284c7', padding: '8px', borderRadius: '10px', color: '#fff', display: 'flex' }}>
+                <BarChart3 size={22} />
+              </div>
+              <div>
+                <span className="eyebrow" style={{ color: '#38bdf8', fontSize: '10px' }}>AQUA SIGHT ANALYTICS</span>
+                <h1 style={{ fontSize: '18px', margin: 0, color: '#f8fafc' }}>แดชบอร์ดประมวลผลและวิเคราะห์คุณภาพน้ำ</h1>
+              </div>
+            </div>
+
+            {/* Mobile Header Switcher */}
+            <div className="mobile-header-switcher" style={{ display: 'flex', gap: '4px', background: '#1e293b', padding: '4px', borderRadius: '10px', border: '1px solid #334155' }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                style={{ fontSize: '12px', padding: '4px 10px', height: '28px', color: '#e2e8f0', background: 'transparent' }}
+                onClick={() => setActiveTab('chat')}
+              >
+                <MessageCircle size={14} style={{ marginRight: '4px', color: '#38bdf8' }} /> แชท
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                style={{ fontSize: '12px', padding: '4px 10px', height: '28px', background: '#0284c7', color: '#ffffff', fontWeight: 'bold' }}
+                onClick={() => setActiveTab('dashboard')}
+              >
+                <BarChart3 size={14} style={{ marginRight: '4px' }} /> แดชบอร์ด
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                style={{ fontSize: '12px', padding: '4px 10px', height: '28px', color: '#e2e8f0', background: 'transparent' }}
+                onClick={() => setActiveTab('interactive-map')}
+              >
+                <MapIcon size={14} style={{ marginRight: '4px', color: '#38bdf8' }} /> แผนที่
+              </Button>
+            </div>
+          </header>
+
+          {/* Dashboard Main Content Container */}
+          <div style={{ flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1280px', width: '100%', margin: '0 auto' }}>
+            <Controls
+              stations={dashboardStations}
+              setStations={setDashboardStations}
+              parameter={dashboardParameter}
+              setParameter={setDashboardParameter}
+              purpose={dashboardPurpose}
+              setPurpose={setDashboardPurpose}
+            />
+
+            {loadingDashboard ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#38bdf8', fontSize: '15px' }}>
+                <span className="pulse" style={{ display: 'inline-block', marginRight: '8px' }} /> กำลังโหลดข้อมูลกราฟและประมวลผลดัชนีคุณภาพน้ำ…
+              </div>
+            ) : (
+              <>
+                <StatusSummary
+                  overallStatus={overallStatus}
+                  stations={dashboardResults}
+                  unit={PARAM_UNITS[dashboardParameter]}
+                />
+
+                <InsightPanel
+                  status={overallStatus}
+                  failedStations={failedStations}
+                  parameterLabel={PARAM_NAMES[dashboardParameter] || dashboardParameter}
+                  purposeLabel={PURPOSE_NAMES[dashboardPurpose] || dashboardPurpose}
+                />
+
+                <WaterQualityChart
+                  series={dashboardSeries}
+                  parameter={dashboardParameter}
+                  purpose={dashboardPurpose}
+                />
+
+                {(() => {
+                  const criterionObj = WATER_QUALITY_CRITERIA[dashboardPurpose]?.[dashboardParameter];
+                  let tLabel = 'ไม่กำหนด';
+                  if (criterionObj) {
+                    if (criterionObj.min !== undefined && criterionObj.max !== undefined) {
+                      tLabel = `${criterionObj.min} - ${criterionObj.max} ${PARAM_UNITS[dashboardParameter]}`.trim();
+                    } else if (criterionObj.min !== undefined) {
+                      tLabel = `≥ ${criterionObj.min} ${PARAM_UNITS[dashboardParameter]}`.trim();
+                    } else if (criterionObj.max !== undefined) {
+                      tLabel = `≤ ${criterionObj.max} ${PARAM_UNITS[dashboardParameter]}`.trim();
+                    }
+                  }
+                  return (
+                    <ComparisonTable
+                      rows={dashboardResults}
+                      unit={PARAM_UNITS[dashboardParameter]}
+                      thresholdLabel={tLabel}
+                    />
+                  );
+                })()}
+              </>
+            )}
+          </div>
+        </section>
+      ) : activeTab === 'interactive-map' ? (
         <section className="chat" style={{ padding: 0, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
           {/* Mobile-Friendly Header with High Contrast Mode Switcher */}
           <header style={{ padding: '12px 20px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
@@ -193,15 +422,23 @@ export default function Home() {
               <Button
                 variant="ghost"
                 size="sm"
-                style={{ fontSize: '12px', padding: '4px 12px', height: '28px', color: '#e2e8f0', background: 'transparent' }}
+                style={{ fontSize: '12px', padding: '4px 10px', height: '28px', color: '#e2e8f0', background: 'transparent' }}
                 onClick={() => setActiveTab('chat')}
               >
                 <MessageCircle size={14} style={{ marginRight: '4px', color: '#38bdf8' }} /> แชท
               </Button>
               <Button
+                variant="ghost"
+                size="sm"
+                style={{ fontSize: '12px', padding: '4px 10px', height: '28px', color: '#e2e8f0', background: 'transparent' }}
+                onClick={() => setActiveTab('dashboard')}
+              >
+                <BarChart3 size={14} style={{ marginRight: '4px', color: '#38bdf8' }} /> แดชบอร์ด
+              </Button>
+              <Button
                 variant="default"
                 size="sm"
-                style={{ fontSize: '12px', padding: '4px 12px', height: '28px', background: '#0284c7', color: '#ffffff', fontWeight: 'bold' }}
+                style={{ fontSize: '12px', padding: '4px 10px', height: '28px', background: '#0284c7', color: '#ffffff', fontWeight: 'bold' }}
                 onClick={() => setActiveTab('interactive-map')}
               >
                 <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
@@ -232,7 +469,7 @@ export default function Home() {
                 <Button
                   variant="default"
                   size="sm"
-                  style={{ fontSize: '12px', padding: '4px 12px', height: '28px', background: '#0284c7', color: '#ffffff', fontWeight: 'bold' }}
+                  style={{ fontSize: '12px', padding: '4px 10px', height: '28px', background: '#0284c7', color: '#ffffff', fontWeight: 'bold' }}
                   onClick={() => setActiveTab('chat')}
                 >
                   <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
@@ -240,7 +477,15 @@ export default function Home() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  style={{ fontSize: '12px', padding: '4px 12px', height: '28px', color: '#475569', background: 'transparent' }}
+                  style={{ fontSize: '12px', padding: '4px 10px', height: '28px', color: '#475569', background: 'transparent' }}
+                  onClick={() => setActiveTab('dashboard')}
+                >
+                  <BarChart3 size={14} style={{ marginRight: '4px', color: '#0284c7' }} /> แดชบอร์ด
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  style={{ fontSize: '12px', padding: '4px 10px', height: '28px', color: '#475569', background: 'transparent' }}
                   onClick={() => setActiveTab('interactive-map')}
                 >
                   <MapIcon size={14} style={{ marginRight: '4px', color: '#0284c7' }} /> แผนที่
@@ -315,7 +560,10 @@ export default function Home() {
           <footer>
             {/* Mobile Scrollable Quick Menu Pills */}
             <div className="mobile-menu">
-              <Button variant="outline" size="sm" onClick={() => setActiveTab('interactive-map')} style={{ background: '#0284c7', color: '#ffffff', fontWeight: 'bold', border: 'none' }}>
+              <Button variant="outline" size="sm" onClick={() => setActiveTab('dashboard')} style={{ background: '#0284c7', color: '#ffffff', fontWeight: 'bold', border: 'none' }}>
+                <BarChart3 size={14} style={{ marginRight: '4px' }} /> แดชบอร์ด
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setActiveTab('interactive-map')} style={{ background: '#0369a1', color: '#ffffff', fontWeight: 'bold', border: 'none' }}>
                 <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่ 9 สถานี
               </Button>
               {menus.map(([title]) => (
