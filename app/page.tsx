@@ -450,8 +450,12 @@ export default function Home() {
             <InteractiveMap
               selectedStation={context.station}
               selectedYear={context.year}
-              onSelectStation={(st) => setContext((c) => ({ ...c, station: st }))}
+              onSelectStation={(st) => {
+                setContext((c) => ({ ...c, station: st }));
+                setDashboardStations([st]);
+              }}
               onSelectYear={(yr) => setContext((c) => ({ ...c, year: yr }))}
+              onSwitchTab={(tab) => setActiveTab(tab)}
             />
           </div>
         </section>
