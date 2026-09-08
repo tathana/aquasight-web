@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       return new NextResponse(buffer, {
         headers: {
           'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
         },
       });
     }
@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
   return new NextResponse(svg, {
     headers: {
       'Content-Type': 'image/svg+xml',
-      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
     },
   });
 }
