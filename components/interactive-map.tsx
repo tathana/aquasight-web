@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MapPin, Layers, Calendar, ChevronDown, ChevronUp, Info, HelpCircle } from 'lucide-react';
+import { MapPin, Layers, Calendar, ChevronDown, ChevronUp, Info, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export interface StationInfo {
@@ -27,6 +27,8 @@ export const STATIONS_DATA: StationInfo[] = [
 
 export const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
 
+const FORECAST_BASE = process.env.NEXT_PUBLIC_FORECAST_API_URL || 'https://predictvalue-api.onrender.com';
+
 export default function InteractiveMap({
   selectedStation,
   selectedYear,
@@ -42,10 +44,17 @@ export default function InteractiveMap({
   const [year, setYear] = useState<number>(selectedYear || 2026);
   const [layerType, setLayerType] = useState<'chl_a' | 'satellite' | 'street'>('chl_a');
   const [mobileDetailOpen, setMobileDetailOpen] = useState<boolean>(true);
+  const [imgError, setImgError] = useState<boolean>(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
 
   const activeStation = STATIONS_DATA.find((s) => s.id === station) || STATIONS_DATA[0];
+  const stationCode = activeStation.id === 'TP11' ? 'TP011' : activeStation.id;
+  const imageSrc = `${FORECAST_BASE}/map_png_proxy?station=${stationCode}&year=${year}&layer=chl_a`;
+
+  useEffect(() => {
+    setImgError(false);
+  }, [station, year]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -70,73 +79,44 @@ export default function InteractiveMap({
         leafletMap.current.remove();
       }
 
-      const map = L.map(mapRef.current, {
-        center: [activeStation.lat, activeStation.lng],
-        zoom: 12,
-        zoomControl: false
-      });
+      const map = L.map(mapRef.current).setView([activeStation.lat, activeStation.lng], 12);
       leafletMap.current = map;
 
-      const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 18,
-        attribution: 'Tiles &copy; Esri &mdash; Earthstar Geographics'
-      });
+      const tileUrl = layerType === 'satellite'
+        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{js}';
 
-      const osmStreets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-      });
-
-      if (layerType === 'street') {
-        osmStreets.addTo(map);
-      } else {
-        esriSatellite.addTo(map);
-      }
+      L.tileLayer(tileUrl, {
+        attribution: '&copy; OpenStreetMap / Esri',
+        maxZoom: 18
+      }).addTo(map);
 
       STATIONS_DATA.forEach((st) => {
-        const isSelected = st.id === station;
+        const isCurrent = st.id === station;
         const iconHtml = `
           <div style="
-            background-color: ${isSelected ? '#f43f5e' : '#0284c7'};
+            background: ${isCurrent ? '#f43f5e' : '#0284c7'};
             color: white;
-            border: 2px solid white;
-            border-radius: 9999px;
-            padding: 3px 8px;
-            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 12px;
             font-size: 11px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            gap: 3px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            border: 2px solid white;
             white-space: nowrap;
           ">
-            <span>📍</span>
-            <span>${st.id}</span>
+            📍 ${st.id}
           </div>
         `;
 
         const customIcon = L.divIcon({
           html: iconHtml,
-          className: 'custom-station-marker',
+          className: 'custom-map-marker',
           iconSize: [60, 24],
           iconAnchor: [30, 12]
         });
 
         const marker = L.marker([st.lat, st.lng], { icon: customIcon }).addTo(map);
-
-        const mapImageUrl = `http://localhost:8000/map_png_proxy?station=${st.id}&year=${year}&layer=chl_a`;
-
-        const popupContent = `
-          <div style="font-family: sans-serif; padding: 4px; max-width: 240px;">
-            <h4 style="margin: 0 0 4px 0; color: #0f172a; font-size: 13px; font-weight: bold;">${st.name}</h4>
-            <p style="margin: 0 0 6px 0; color: #475569; font-size: 11px;">จังหวัด: ${st.province} | ${st.type}</p>
-            <p style="margin: 0 0 6px 0; color: #0284c7; font-size: 11px; font-weight: 600;">ปี: ${year}</p>
-            <img src="${mapImageUrl}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #cbd5e1;" alt="Satellite Map" />
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
-
         marker.on('click', () => {
           setStation(st.id);
           if (onSelectStation) onSelectStation(st.id);
@@ -183,7 +163,7 @@ export default function InteractiveMap({
               variant={layerType === 'chl_a' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setLayerType('chl_a')}
-              style={{ fontSize: '11px', padding: '3px 8px', height: '26px' }}
+              style={{ fontSize: '11px', padding: '3px 8px', height: '26px', background: layerType === 'chl_a' ? '#0284c7' : 'transparent', color: '#fff' }}
             >
               <Layers size={13} style={{ marginRight: '3px' }} /> Chlorophyll-a
             </Button>
@@ -191,7 +171,7 @@ export default function InteractiveMap({
               variant={layerType === 'satellite' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setLayerType('satellite')}
-              style={{ fontSize: '11px', padding: '3px 8px', height: '26px' }}
+              style={{ fontSize: '11px', padding: '3px 8px', height: '26px', background: layerType === 'satellite' ? '#0284c7' : 'transparent', color: layerType === 'satellite' ? '#fff' : '#94a3b8' }}
             >
               ดาวเทียม
             </Button>
@@ -199,7 +179,7 @@ export default function InteractiveMap({
               variant={layerType === 'street' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setLayerType('street')}
-              style={{ fontSize: '11px', padding: '3px 8px', height: '26px' }}
+              style={{ fontSize: '11px', padding: '3px 8px', height: '26px', background: layerType === 'street' ? '#0284c7' : 'transparent', color: layerType === 'street' ? '#fff' : '#94a3b8' }}
             >
               ถนน
             </Button>
@@ -289,12 +269,21 @@ export default function InteractiveMap({
                 <span style={{ fontSize: '11px', color: '#cbd5e1', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
                   🖼️ ภาพดาวเทียม Chlorophyll-a ({year})
                 </span>
-                <div style={{ borderRadius: '6px', overflow: 'hidden', border: '1px solid #334155', background: '#090d16' }}>
-                  <img
-                    src={`http://localhost:8000/map_png_proxy?station=${activeStation.id}&year=${year}&layer=chl_a`}
-                    alt={`Chlorophyll-a Map ${activeStation.id}`}
-                    style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'contain' }}
-                  />
+                <div style={{ borderRadius: '6px', overflow: 'hidden', border: '1px solid #334155', background: '#090d16', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {!imgError ? (
+                    <img
+                      src={imageSrc}
+                      alt={`Chlorophyll-a Map ${activeStation.id}`}
+                      onError={() => setImgError(true)}
+                      style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'contain' }}
+                    />
+                  ) : (
+                    <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <RefreshCw size={20} className="animate-spin text-sky-400" />
+                      <span>กำลังโหลดภาพดาวเทียมจากเซิร์ฟเวอร์ Render...</span>
+                      <small style={{ color: '#64748b', fontSize: '10px' }}>หากเป็นครั้งแรก เซิร์ฟเวอร์ Render กำลังเริ่มทำงาน (Cold Start)</small>
+                    </div>
+                  )}
                 </div>
               </div>
 
