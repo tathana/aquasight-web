@@ -22,27 +22,27 @@ const STATIONS = [
    🧪 Parameters (ตรง backend)
 ================================ */
 const PARAMETERS: { value: WaterParameter; label: string }[] = [
-  { value: "secchi", label: "Secchi Depth (m)" },
-  { value: "chlorophyll_a", label: "Chlorophyll-a (µg/L)" },
-  { value: "tsi", label: "Trophic State Index (TSI)" },
-  { value: "turbidity", label: "Turbidity (NTU)" },
-  { value: "salinity", label: "Salinity (ppt)" },
-  { value: "do", label: "Dissolved Oxygen (mg/L)" },
-  { value: "ph", label: "pH" },
+  { value: "secchi", label: "Secchi Depth (ความโปร่งใสของน้ำ - m)" },
+  { value: "chlorophyll_a", label: "Chlorophyll-a (คลอโรฟิลล์-เอ - µg/L)" },
+  { value: "tsi", label: "Trophic State Index (TSI - ดัชนีสภาวะสารอาหาร)" },
+  { value: "turbidity", label: "Turbidity (ความขุ่นของน้ำ - NTU)" },
+  { value: "salinity", label: "Salinity (ความเค็มของน้ำ - ppt)" },
+  { value: "do", label: "Dissolved Oxygen (DO - ออกซิเจนละลาย mg/L)" },
+  { value: "ph", label: "pH (ความเป็นกรด-ด่าง)" },
 ];
 
 /* ===============================
    🎯 Purpose labels
 ================================ */
 const PURPOSE_LABELS: Record<string, string> = {
-  drinking: "น้ำดื่ม / Drinking",
-  agriculture: "เกษตร / Agriculture",
-  aquaculture: "เพาะเลี้ยงสัตว์น้ำ / Aquaculture",
-  shrimp: "เลี้ยงกุ้ง / Shrimp Farming",
-  industry: "อุตสาหกรรม / Industry",
-  recreation: "นันทนาการ / Recreation",
-  ecosystem: "ระบบนิเวศ / Ecosystem",
-  reuse: "น้ำบำบัด / Reuse",
+  drinking: "🧊 น้ำดื่ม / อุปโภคบริโภค (Drinking)",
+  agriculture: "🪴 การเกษตร / ทำสวน (Agriculture)",
+  aquaculture: "🐠 การเพาะเลี้ยงสัตว์น้ำ (Aquaculture)",
+  shrimp: "🦐 การเลี้ยงกุ้ง (Shrimp Farming)",
+  industry: "🏭 อุตสาหกรรม (Industry)",
+  recreation: "🏖️ นันทนาการ / ท่องเที่ยว (Recreation)",
+  ecosystem: "🪶 รักษาระบบนิเวศ (Ecosystem)",
+  reuse: "🚰 น้ำบำบัด / นำกลับมาใช้ (Water Reuse)",
 };
 
 /* ===============================

@@ -14,18 +14,18 @@ export default function ComparisonTable({
   return (
     <div className="bg-[var(--color-ocean-card)] rounded-xl border border-slate-800 p-6 shadow-lg">
       <h3 className="text-lg font-semibold mb-4 text-[var(--color-accent-glow)] flex items-center gap-2">
-        <span className="opacity-80">📊</span> Station Comparison
+        <span className="opacity-80">📊</span> เปรียบเทียบข้อมูลระหว่างสถานีตรวจวัด (Station Comparison)
       </h3>
 
       <div className="overflow-x-auto rounded-lg border border-white/5">
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="bg-white/5 border-b border-white/5 text-slate-400 uppercase text-xs tracking-wider">
-              <th className="text-left py-3 px-4 font-medium">📍 Station</th>
-              <th className="text-right py-3 px-4 font-medium">🔍 Latest Value</th>
-              <th className="text-right py-3 px-4 font-medium">🔮 Forecast (Avg)</th>
-              <th className="text-center py-3 px-4 font-medium min-w-[100px]">📏 Standard</th>
-              <th className="text-center py-3 px-4 font-medium">🚦 Status</th>
+              <th className="text-left py-3 px-4 font-medium">📍 สถานี (Station)</th>
+              <th className="text-right py-3 px-4 font-medium">🔍 ค่าตรวจวัดล่าสุด (Latest)</th>
+              <th className="text-right py-3 px-4 font-medium">🔮 ค่าพยากรณ์เฉลี่ย (Forecast)</th>
+              <th className="text-center py-3 px-4 font-medium min-w-[100px]">📏 เกณฑ์อ้างอิง (Standard)</th>
+              <th className="text-center py-3 px-4 font-medium">🚦 สถานะ (Status)</th>
             </tr>
           </thead>
 
@@ -69,7 +69,7 @@ export default function ComparisonTable({
                       }
                     `}
                   >
-                    {r.status.toUpperCase()}
+                    {r.status === "pass" ? "ปกติ (PASS)" : r.status === "warning" ? "เฝ้าระวัง (WARN)" : "ไม่ผ่าน (FAIL)"}
                   </span>
                 </td>
               </tr>

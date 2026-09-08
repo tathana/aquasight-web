@@ -17,21 +17,21 @@ const STATUS_META: Record<
 > = {
   pass: {
     icon: "🌊",
-    title: "Water Quality is Within Criteria",
+    title: "คุณภาพน้ำอยู่ในเกณฑ์มาตรฐานดี (Within Criteria)",
     bg: "bg-emerald-500/5",
     border: "border-emerald-500/20",
     text: "text-emerald-400",
   },
   warning: {
     icon: "⚠️",
-    title: "Potential Risk Detected",
+    title: "พบสภาวะเฝ้าระวังความเสี่ยง (Potential Risk)",
     bg: "bg-amber-500/5",
     border: "border-amber-500/20",
     text: "text-amber-400",
   },
   fail: {
     icon: "☣️", // Biohazard/Pollution vibe for Fail in insights
-    title: "Water Quality Criteria Not Met",
+    title: "คุณภาพน้ำไม่อยู่ในเกณฑ์มาตรฐาน (Out of Range)",
     bg: "bg-orange-500/5",
     border: "border-orange-500/20",
     text: "text-orange-400",
@@ -73,14 +73,14 @@ export default function InsightPanel({
       ============================== */}
       {status === "pass" ? (
         <p className="text-sm text-slate-300 leading-relaxed">
-          Based on <b>{parameterLabel}</b> data evaluation, all stations remain within acceptable ranges for{" "}
-          <b className="text-[var(--color-accent-cyan)]">{purposeLabel}</b>.
+          จากการประเมินตัวชี้วัด <b>{parameterLabel}</b> พบว่าทุกสถานีตรวจวัดมีค่าอยู่ในช่วงเกณฑ์มาตรฐานที่เหมาะสมสำหรับ{" "}
+          <b className="text-[var(--color-accent-cyan)]">{purposeLabel}</b>
         </p>
       ) : (
         <>
           <p className="text-sm text-slate-300 leading-relaxed">
-            Analysis of <b>{parameterLabel}</b> indicates that water quality in some areas may be unsuitable for{" "}
-            <b className="text-[var(--color-accent-cyan)]">{purposeLabel}</b>.
+            จากการวิเคราะห์ค่า <b>{parameterLabel}</b> พบว่าคุณภาพน้ำในบางสถานีสุ่มเสี่ยงหรือไม่เหมาะสมสำหรับการใช้งานประเภท{" "}
+            <b className="text-[var(--color-accent-cyan)]">{purposeLabel}</b>
           </p>
 
           {/* ===============================
@@ -88,8 +88,8 @@ export default function InsightPanel({
           ============================== */}
           {failedStations.length > 0 && (
             <div className="text-sm text-slate-300 bg-black/20 p-4 rounded-lg border border-white/5">
-              <div className="font-semibold mb-2 text-white">
-                Affected Stations:
+              <div className="font-semibold mb-2 text-white flex items-center gap-2">
+                <span>📍</span> สถานีตรวจวัดที่มีค่าเบี่ยงเบนจากเกณฑ์:
               </div>
               <ul className="grid grid-cols-2 gap-2">
                 {failedStations.map((s) => (

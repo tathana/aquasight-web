@@ -83,18 +83,18 @@ export default function WaterQualityChart({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-[var(--color-accent-glow)] flex items-center gap-2">
-            <span>📈</span> Water Quality Trends
+            <span>📈</span> กราฟแสดงแนวโน้มคุณภาพน้ำ (Water Quality Trends)
           </h3>
           <p className="text-xs text-slate-400 mt-1">
-            Historical Data vs. Forecast Model
+            เปรียบเทียบข้อมูลย้อนหลังจริงกับแบบจำลองพยากรณ์ล่วงหน้า
           </p>
         </div>
         <div className="flex gap-4 text-xs text-slate-400 font-mono">
-          <span className="flex items-center gap-1" title="Recorded field data">
-            <span className="w-3 h-0.5 bg-[var(--color-accent-cyan)]"></span> 🔍 Actual
+          <span className="flex items-center gap-1" title="ข้อมูลตรวจวัดย้อนหลัง">
+            <span className="w-3 h-0.5 bg-[var(--color-accent-cyan)]"></span> 🔍 ค่าจริง (Actual)
           </span>
-          <span className="flex items-center gap-1" title="AI Prediction model">
-            <span className="w-3 h-0.5 border-t border-dashed border-[var(--color-accent-cyan)] opacity-60"></span> 🔮 Forecast
+          <span className="flex items-center gap-1" title="ผลการพยากรณ์">
+            <span className="w-3 h-0.5 border-t border-dashed border-[var(--color-accent-cyan)] opacity-60"></span> 🔮 ค่าพยากรณ์ (Forecast)
           </span>
         </div>
       </div>

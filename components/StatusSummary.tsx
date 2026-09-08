@@ -5,21 +5,21 @@ import { StationResult } from "@/types/station";
 
 const STATUS_META = {
   pass: {
-    label: "Pass (Normal)",
+    label: "ผ่านเกณฑ์มาตรฐาน (ปกติ)",
     icon: "✅",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
     border: "border-emerald-500/20",
   },
   warning: {
-    label: "Warning",
+    label: "เฝ้าระวัง (แจ้งเตือน)",
     icon: "⚠️",
     color: "text-amber-400",
     bg: "bg-amber-500/10",
     border: "border-amber-500/20",
   },
   fail: {
-    label: "Non-Compliant",
+    label: "ไม่อยู่ในเกณฑ์มาตรฐาน",
     icon: "⛔",
     color: "text-orange-400",
     bg: "bg-orange-500/10",
@@ -52,7 +52,7 @@ export default function StatusSummary({
         className={`flex items-center gap-3 font-semibold text-lg ${meta.color}`}
       >
         <span className="text-2xl drop-shadow-md">{meta.icon}</span>
-        Overall Status: {meta.label}
+        สถานะภาพรวม: {meta.label}
       </div>
 
       {reason && (
@@ -64,19 +64,19 @@ export default function StatusSummary({
       {/* 🔹 Per-Station Breakdown */}
       <div className="pt-2">
         <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-          <span>📍</span> Station Breakdown
+          <span>📍</span> รายละเอียดสรุปแยกตามสถานีตรวจวัด
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-white/5">
           <table className="min-w-full text-sm">
             <thead className="bg-white/5 text-slate-400">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">Station</th>
-                <th className="px-4 py-3 text-right font-medium">Latest</th>
+                <th className="px-4 py-3 text-left font-medium">สถานี (Station)</th>
+                <th className="px-4 py-3 text-right font-medium">ค่าล่าสุด (Latest)</th>
                 <th className="px-4 py-3 text-right font-medium">
-                  Forecast (Avg)
+                  ค่าพยากรณ์เฉลี่ย (Forecast)
                 </th>
-                <th className="px-4 py-3 text-center font-medium">Status</th>
+                <th className="px-4 py-3 text-center font-medium">สถานะ (Status)</th>
               </tr>
             </thead>
 
