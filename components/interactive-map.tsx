@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MapPin, Layers, RefreshCw, ZoomIn, ZoomOut, Calendar } from 'lucide-react';
+import { MapPin, Layers, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export interface StationInfo {
@@ -41,13 +41,13 @@ export default function InteractiveMap({
   const [station, setStation] = useState<string>(selectedStation || 'CP01');
   const [year, setYear] = useState<number>(selectedYear || 2026);
   const [layerType, setLayerType] = useState<'chl_a' | 'satellite' | 'street'>('chl_a');
+  const [mobileDetailOpen, setMobileDetailOpen] = useState<boolean>(true);
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
 
   const activeStation = STATIONS_DATA.find((s) => s.id === station) || STATIONS_DATA[0];
 
   useEffect(() => {
-    // Dynamically inject Leaflet CSS & JS
     if (typeof window === 'undefined') return;
 
     const cssId = 'leaflet-css';
@@ -77,7 +77,6 @@ export default function InteractiveMap({
       });
       leafletMap.current = map;
 
-      // Base tile layers
       const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 18,
         attribution: 'Tiles &copy; Esri &mdash; Earthstar Geographics'
@@ -94,7 +93,6 @@ export default function InteractiveMap({
         esriSatellite.addTo(map);
       }
 
-      // Add all 9 stations as interactive markers
       STATIONS_DATA.forEach((st) => {
         const isSelected = st.id === station;
         const iconHtml = `
@@ -103,13 +101,13 @@ export default function InteractiveMap({
             color: white;
             border: 2px solid white;
             border-radius: 9999px;
-            padding: 4px 8px;
+            padding: 3px 8px;
             font-weight: bold;
             font-size: 11px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             white-space: nowrap;
           ">
             <span>📍</span>
@@ -129,11 +127,11 @@ export default function InteractiveMap({
         const mapImageUrl = `http://localhost:8000/map_png_proxy?station=${st.id}&year=${year}&layer=chl_a`;
 
         const popupContent = `
-          <div style="font-family: sans-serif; padding: 4px; min-width: 220px;">
-            <h4 style="margin: 0 0 4px 0; color: #0f172a; font-size: 14px; font-weight: bold;">${st.name}</h4>
-            <p style="margin: 0 0 6px 0; color: #475569; font-size: 12px;">จังหวัด: ${st.province} | ${st.type}</p>
-            <p style="margin: 0 0 8px 0; color: #0284c7; font-size: 11px; font-weight: 600;">ปีที่เลือก: ${year}</p>
-            <img src="${mapImageUrl}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #cbd5e1;" alt="Satellite Chlorophyll-a Map" />
+          <div style="font-family: sans-serif; padding: 4px; max-width: 240px;">
+            <h4 style="margin: 0 0 4px 0; color: #0f172a; font-size: 13px; font-weight: bold;">${st.name}</h4>
+            <p style="margin: 0 0 6px 0; color: #475569; font-size: 11px;">จังหวัด: ${st.province} | ${st.type}</p>
+            <p style="margin: 0 0 6px 0; color: #0284c7; font-size: 11px; font-weight: 600;">ปี: ${year}</p>
+            <img src="${mapImageUrl}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #cbd5e1;" alt="Satellite Map" />
           </div>
         `;
 
@@ -145,7 +143,6 @@ export default function InteractiveMap({
         });
       });
 
-      // Fly to active station
       map.flyTo([activeStation.lat, activeStation.lng], 12, { duration: 1.2 });
     };
 
@@ -171,12 +168,12 @@ export default function InteractiveMap({
   };
 
   return (
-    <div className="interactive-map-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#0f172a', color: '#f8fafc' }}>
+    <div className="interactive-map-root" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#0f172a', color: '#f8fafc' }}>
       {/* Control Toolbar */}
-      <div style={{ padding: '12px 16px', background: '#1e293b', borderBottom: '1px solid #334155', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <MapPin size={20} className="text-cyan-400" />
-          <span style={{ fontWeight: 'bold', fontSize: '15px' }}> Interactive Map — แผนที่โต้ตอบ 9 สถานี</span>
+      <div style={{ padding: '10px 14px', background: '#1e293b', borderBottom: '1px solid #334155', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <MapPin size={18} style={{ color: '#38bdf8' }} />
+          <span style={{ fontWeight: 'bold', fontSize: '14px' }}>แผนที่โต้ตอบ 9 สถานี</span>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
@@ -186,44 +183,45 @@ export default function InteractiveMap({
               variant={layerType === 'chl_a' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setLayerType('chl_a')}
-              style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
+              style={{ fontSize: '11px', padding: '3px 8px', height: '26px' }}
             >
-              <Layers size={14} style={{ marginRight: '4px' }} /> Chlorophyll-a
+              <Layers size={13} style={{ marginRight: '3px' }} /> Chlorophyll-a
             </Button>
             <Button
               variant={layerType === 'satellite' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setLayerType('satellite')}
-              style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
+              style={{ fontSize: '11px', padding: '3px 8px', height: '26px' }}
             >
-              ดาวเทียม Esri
+              ดาวเทียม
             </Button>
             <Button
               variant={layerType === 'street' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setLayerType('street')}
-              style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
+              style={{ fontSize: '11px', padding: '3px 8px', height: '26px' }}
             >
-              ถนน OpenStreetMap
+              ถนน
             </Button>
           </div>
 
           {/* Year Pills */}
-          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-            <Calendar size={15} style={{ color: '#94a3b8' }} />
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Calendar size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
             {YEARS.map((yr) => (
               <button
                 key={yr}
                 onClick={() => handleYearClick(yr)}
                 style={{
-                  padding: '3px 8px',
+                  padding: '2px 7px',
                   borderRadius: '6px',
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: year === yr ? 'bold' : 'normal',
                   background: year === yr ? '#0284c7' : '#334155',
                   color: 'white',
                   border: 'none',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  flexShrink: 0
                 }}
               >
                 {yr}
@@ -233,8 +231,8 @@ export default function InteractiveMap({
         </div>
       </div>
 
-      {/* Station Selector Bar */}
-      <div style={{ padding: '8px 16px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', overflowX: 'auto', gap: '6px' }}>
+      {/* Station Selector Pills */}
+      <div style={{ padding: '6px 12px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', overflowX: 'auto', gap: '6px', WebkitOverflowScrolling: 'touch' }}>
         {STATIONS_DATA.map((st) => (
           <button
             key={st.id}
@@ -242,13 +240,14 @@ export default function InteractiveMap({
             style={{
               padding: '4px 10px',
               borderRadius: '9999px',
-              fontSize: '12px',
+              fontSize: '11px',
               whiteSpace: 'nowrap',
               fontWeight: station === st.id ? 'bold' : '500',
               background: station === st.id ? '#f43f5e' : '#1e293b',
               color: station === st.id ? 'white' : '#cbd5e1',
               border: '1px solid ' + (station === st.id ? '#f43f5e' : '#334155'),
-              cursor: 'pointer'
+              cursor: 'pointer',
+              flexShrink: 0
             }}
           >
             📍 {st.id} ({st.province})
@@ -256,36 +255,50 @@ export default function InteractiveMap({
         ))}
       </div>
 
-      {/* Map View & Active Station Preview Split Panel */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'row', position: 'relative' }}>
-        {/* Leaflet Map Container */}
-        <div ref={mapRef} style={{ flex: 1, height: '100%', minHeight: '400px', zIndex: 1 }} />
+      {/* Responsive Grid / Flex Container */}
+      <div className="map-view-split" style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        {/* Leaflet Map */}
+        <div ref={mapRef} className="leaflet-container-box" style={{ width: '100%', height: '100%', minHeight: '320px' }} />
 
-        {/* Floating Station Data Sidebar Card */}
-        <div style={{ width: '320px', background: '#1e293b', borderLeft: '1px solid #334155', padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div>
-            <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>สถานีที่เลือก</span>
-            <h3 style={{ margin: '2px 0 4px 0', fontSize: '18px', fontWeight: 'bold', color: '#f8fafc' }}>{activeStation.name}</h3>
-            <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>จังหวัด{activeStation.province} · {activeStation.type}</p>
-          </div>
-
-          <div style={{ padding: '8px 12px', background: '#0f172a', borderRadius: '8px', border: '1px solid #334155', fontSize: '12px' }}>
-            <p style={{ margin: '0 0 4px 0', color: '#cbd5e1' }}>📍 พิกัด Latitude/Longitude:</p>
-            <p style={{ margin: 0, color: '#38bdf8', fontWeight: 'bold' }}>{activeStation.lat.toFixed(4)}°N, {activeStation.lng.toFixed(4)}°E</p>
-          </div>
-
-          <div>
-            <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
-              🖼️ ภาพดาวเทียม Chlorophyll-a ({year})
-            </span>
-            <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #334155', background: '#090d16' }}>
-              <img
-                src={`http://localhost:8000/map_png_proxy?station=${activeStation.id}&year=${year}&layer=chl_a`}
-                alt={`Chlorophyll-a Map ${activeStation.id}`}
-                style={{ width: '100%', height: 'auto', display: 'block' }}
-              />
+        {/* Floating / Stacked Station Card */}
+        <div className="station-detail-panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>สถานีที่เลือก</span>
+              <h3 style={{ margin: '2px 0 0 0', fontSize: '16px', fontWeight: 'bold', color: '#f8fafc' }}>{activeStation.name}</h3>
+              <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>จังหวัด{activeStation.province} · {activeStation.type}</p>
             </div>
+            
+            <button
+              className="mobile-toggle-btn"
+              onClick={() => setMobileDetailOpen(!mobileDetailOpen)}
+              style={{ background: '#334155', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer' }}
+            >
+              {mobileDetailOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </button>
           </div>
+
+          {mobileDetailOpen && (
+            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ padding: '6px 10px', background: '#0f172a', borderRadius: '6px', border: '1px solid #334155', fontSize: '11px' }}>
+                <span style={{ color: '#cbd5e1' }}>📍 พิกัด Lat/Lon: </span>
+                <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>{activeStation.lat.toFixed(4)}°N, {activeStation.lng.toFixed(4)}°E</span>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '11px', color: '#cbd5e1', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                  🖼️ ภาพดาวเทียม Chlorophyll-a ({year})
+                </span>
+                <div style={{ borderRadius: '6px', overflow: 'hidden', border: '1px solid #334155', background: '#090d16' }}>
+                  <img
+                    src={`http://localhost:8000/map_png_proxy?station=${activeStation.id}&year=${year}&layer=chl_a`}
+                    alt={`Chlorophyll-a Map ${activeStation.id}`}
+                    style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'contain' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

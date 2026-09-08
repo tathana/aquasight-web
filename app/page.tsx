@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Waves, MapPin, MessageCircle, RotateCcw, ChevronRight, Layers, Map as MapIcon } from 'lucide-react';
+import { ArrowUp, Waves, MapPin, MessageCircle, RotateCcw, ChevronRight, Map as MapIcon, Sparkles, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import InteractiveMap from '@/components/interactive-map';
 
@@ -123,6 +123,7 @@ export default function Home() {
 
   return (
     <main className="workspace">
+      {/* Desktop Sidebar */}
       <aside className="guide">
         <div className="brand">
           <div className="brand-icon">
@@ -134,10 +135,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* View Toggle Bar */}
-        <div style={{ padding: '8px 12px', background: '#0f172a', borderRadius: '8px', border: '1px solid #1e293b', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {/* Desktop View Switcher */}
+        <div style={{ padding: '8px 12px', background: '#0f172a', borderRadius: '10px', border: '1px solid #1e293b', margin: '16px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>เลือกโหมดการทำงาน</span>
-          <div style={{ display: 'flex', gap: '4px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             <Button
               variant={activeTab === 'chat' ? 'default' : 'ghost'}
               size="sm"
@@ -167,7 +168,6 @@ export default function Home() {
               disabled={busy}
               onClick={() => {
                 if (title === 'ดูแผนที่') {
-                  // Switch to interactive map if clicked, or send chat
                   send(title);
                 } else {
                   send(title);
@@ -198,17 +198,39 @@ export default function Home() {
 
       {/* Main Panel View */}
       {activeTab === 'interactive-map' ? (
-        <section className="chat" style={{ padding: 0 }}>
-          <header style={{ padding: '12px 16px', background: '#0f172a', borderBottom: '1px solid #1e293b' }}>
-            <div>
-              <span className="eyebrow">AQUA SIGHT MAP</span>
-              <h1>แผนที่โต้ตอบ 9 สถานี (Interactive Map)</h1>
+        <section className="chat" style={{ padding: 0, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+          {/* Header with Mode Toggle */}
+          <header style={{ padding: '10px 16px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Waves size={22} className="text-cyan-400" />
+              <div>
+                <span className="eyebrow" style={{ color: '#38bdf8', fontSize: '10px' }}>AQUA SIGHT MAP</span>
+                <h1 style={{ fontSize: '16px', margin: 0, color: '#f8fafc' }}>แผนที่โต้ตอบ 9 สถานี</h1>
+              </div>
             </div>
-            <Button variant="outline" onClick={() => setActiveTab('chat')}>
-              <MessageCircle size={15} style={{ marginRight: '4px' }} /> สลับไปหน้าแชท
-            </Button>
+            
+            {/* Top Bar Switcher (Mobile Friendly) */}
+            <div style={{ display: 'flex', gap: '4px', background: '#1e293b', padding: '3px', borderRadius: '8px' }}>
+              <Button
+                variant={activeTab === 'chat' ? 'default' : 'ghost'}
+                size="sm"
+                style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
+                onClick={() => setActiveTab('chat')}
+              >
+                <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
+              </Button>
+              <Button
+                variant={activeTab === 'interactive-map' ? 'default' : 'ghost'}
+                size="sm"
+                style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
+                onClick={() => setActiveTab('interactive-map')}
+              >
+                <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
+              </Button>
+            </div>
           </header>
-          <div style={{ flex: 1, height: 'calc(100vh - 70px)' }}>
+
+          <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
             <InteractiveMap
               selectedStation={context.station}
               selectedYear={context.year}
@@ -219,17 +241,36 @@ export default function Home() {
         </section>
       ) : (
         <section className="chat" aria-label="บทสนทนา Aqua Sight">
-          <header>
+          <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
             <div>
               <span className="eyebrow">AQUA SIGHT CHAT</span>
               <h1>คุยเรื่องน้ำ</h1>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Button variant="outline" size="sm" onClick={() => setActiveTab('interactive-map')}>
-                <MapIcon size={15} style={{ marginRight: '4px' }} /> เปิดแผนที่โต้ตอบ
-              </Button>
+            
+            {/* Mode Switcher Bar */}
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '2px', background: '#e2e8f0', padding: '3px', borderRadius: '8px' }}>
+                <Button
+                  variant={activeTab === 'chat' ? 'default' : 'ghost'}
+                  size="sm"
+                  style={{ fontSize: '12px', padding: '4px 10px', height: '30px' }}
+                  onClick={() => setActiveTab('chat')}
+                >
+                  <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
+                </Button>
+                <Button
+                  variant={activeTab === 'interactive-map' ? 'ghost' : 'ghost'}
+                  size="sm"
+                  style={{ fontSize: '12px', padding: '4px 10px', height: '30px' }}
+                  onClick={() => setActiveTab('interactive-map')}
+                >
+                  <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
+                </Button>
+              </div>
+
               <Button
                 variant="outline"
+                size="sm"
                 disabled={busy}
                 onClick={() => {
                   setMessages([greeting]);
@@ -237,7 +278,7 @@ export default function Home() {
                   setInput('');
                 }}
               >
-                <RotateCcw size={15} /> เริ่มใหม่
+                <RotateCcw size={14} /> <span className="hidden sm:inline">เริ่มใหม่</span>
               </Button>
             </div>
           </header>
@@ -291,13 +332,18 @@ export default function Home() {
           </div>
 
           <footer>
-            <div className="mobile-menu">
+            {/* Mobile Scrollable Quick Menu Pills */}
+            <div className="mobile-menu" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}>
+              <Button variant="outline" size="sm" onClick={() => setActiveTab('interactive-map')} style={{ background: '#38bdf8', color: '#0f172a', fontWeight: 'bold' }}>
+                <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่ 9 สถานี
+              </Button>
               {menus.map(([title]) => (
-                <Button variant="outline" disabled={busy} key={title} onClick={() => send(title)}>
+                <Button variant="outline" size="sm" disabled={busy} key={title} onClick={() => send(title)} style={{ whiteSpace: 'nowrap' }}>
                   {title}
                 </Button>
               ))}
             </div>
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
