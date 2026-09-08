@@ -29,6 +29,16 @@ const greeting: Message = {
   ]
 };
 
+function formatBubbleText(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-semibold text-slate-900">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'chat' | 'interactive-map'>('chat');
   const [messages, setMessages] = useState<Message[]>([greeting]);
@@ -89,37 +99,6 @@ export default function Home() {
       setBusy(false);
     }
   }
-
-  useEffect(() => {
-    const mc = (document as unknown as { modelContext?: { registerTool: (tool: unknown, options: unknown) => unknown } }).modelContext;
-    if (!mc) return;
-    const life = new AbortController();
-    try {
-      Promise.resolve(
-        mc.registerTool(
-          {
-            name: 'send_aquasight_message',
-            description: 'Send a message and show the Aqua Sight reply.',
-            inputSchema: {
-              type: 'object',
-              properties: { message: { type: 'string', minLength: 1, maxLength: 2000 } },
-              required: ['message'],
-              additionalProperties: false
-            },
-            annotations: { readOnlyHint: false, untrustedContentHint: true },
-            execute: async (args: unknown) => {
-              const v = args as { message?: unknown };
-              if (typeof v?.message !== 'string' || !v.message.trim() || v.message.length > 2000) throw new Error('Invalid message');
-              if (lock.current) throw new Error('Chat is busy');
-              return send(v.message);
-            }
-          },
-          { signal: life.signal }
-        )
-      ).catch(() => {});
-    } catch {}
-    return () => life.abort();
-  }, []);
 
   return (
     <main className="workspace">
@@ -197,38 +176,36 @@ export default function Home() {
       {/* Main Panel View */}
       {activeTab === 'interactive-map' ? (
         <section className="chat" style={{ padding: 0, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-          {/* Header with Mode Toggle */}
-          <header style={{ padding: '12px 24px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+          {/* Mobile-Friendly Header with High Contrast Mode Switcher */}
+          <header style={{ padding: '12px 20px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ background: '#0369a1', padding: '8px', borderRadius: '10px', color: '#fff', display: 'flex' }}>
                 <Waves size={20} />
               </div>
               <div>
                 <span className="eyebrow" style={{ color: '#38bdf8', fontSize: '10px' }}>AQUA SIGHT MAP</span>
-                <h1 style={{ fontSize: '18px', margin: 0, color: '#f8fafc' }}>แผนที่โต้ตอบ 9 สถานีตรวจวัด</h1>
+                <h1 style={{ fontSize: '17px', margin: 0, color: '#f8fafc' }}>แผนที่โต้ตอบ 9 สถานีตรวจวัด</h1>
               </div>
             </div>
             
-            {/* Top Bar Switcher */}
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '3px', background: '#1e293b', padding: '3px', borderRadius: '10px' }}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  style={{ fontSize: '12px', padding: '4px 12px', height: '30px', color: '#94a3b8' }}
-                  onClick={() => setActiveTab('chat')}
-                >
-                  <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  style={{ fontSize: '12px', padding: '4px 12px', height: '30px', background: '#0284c7', color: '#fff' }}
-                  onClick={() => setActiveTab('interactive-map')}
-                >
-                  <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
-                </Button>
-              </div>
+            {/* Mobile Mode Switcher Bar */}
+            <div className="mobile-header-switcher" style={{ display: 'flex', gap: '4px', background: '#1e293b', padding: '4px', borderRadius: '10px', border: '1px solid #334155' }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                style={{ fontSize: '12px', padding: '4px 12px', height: '28px', color: '#e2e8f0', background: 'transparent' }}
+                onClick={() => setActiveTab('chat')}
+              >
+                <MessageCircle size={14} style={{ marginRight: '4px', color: '#38bdf8' }} /> แชท
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                style={{ fontSize: '12px', padding: '4px 12px', height: '28px', background: '#0284c7', color: '#ffffff', fontWeight: 'bold' }}
+                onClick={() => setActiveTab('interactive-map')}
+              >
+                <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
+              </Button>
             </div>
           </header>
 
@@ -250,7 +227,27 @@ export default function Home() {
             </div>
             
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {/* Header Reset Button */}
+              {/* Mobile Mode Switcher Bar */}
+              <div className="mobile-header-switcher" style={{ display: 'flex', gap: '4px', background: '#f1f5f9', padding: '3px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+                <Button
+                  variant="default"
+                  size="sm"
+                  style={{ fontSize: '12px', padding: '4px 12px', height: '28px', background: '#0284c7', color: '#ffffff', fontWeight: 'bold' }}
+                  onClick={() => setActiveTab('chat')}
+                >
+                  <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  style={{ fontSize: '12px', padding: '4px 12px', height: '28px', color: '#475569', background: 'transparent' }}
+                  onClick={() => setActiveTab('interactive-map')}
+                >
+                  <MapIcon size={14} style={{ marginRight: '4px', color: '#0284c7' }} /> แผนที่
+                </Button>
+              </div>
+
+              {/* Reset Button */}
               <Button
                 variant="outline"
                 size="sm"
@@ -260,7 +257,7 @@ export default function Home() {
                   setContext({});
                   setInput('');
                 }}
-                style={{ fontSize: '13px', borderRadius: '10px', height: '36px', borderColor: '#cbd5e1' }}
+                style={{ fontSize: '12px', borderRadius: '10px', height: '34px', borderColor: '#cbd5e1' }}
               >
                 <RotateCcw size={14} style={{ marginRight: '4px' }} /> <span>เริ่มใหม่</span>
               </Button>
@@ -287,7 +284,7 @@ export default function Home() {
                   </div>
                 )}
                 <div className="message-content">
-                  <div className={`bubble ${m.error ? 'error' : ''}`}>{m.text}</div>
+                  <div className={`bubble ${m.error ? 'error' : ''}`}>{formatBubbleText(m.text)}</div>
                   {m.image && (
                     <a href={m.image} target="_blank" rel="noreferrer" className="map-image">
                       <img src={m.image} alt="ภาพแผนที่ Chlorophyll-a จากบริการ Aqua Sight" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
