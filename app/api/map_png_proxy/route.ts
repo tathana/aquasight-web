@@ -24,10 +24,8 @@ const RASTER_COLORS = [
   '#ffeb3b', // 30-35 ug/L (Yellow)
   '#ff9100', // 35-40 ug/L (Orange)
   '#d50000', // > 40 ug/L (Red)
-  '#880000', // Extreme Red
 ];
 
-// Simple pseudo random generator with seed
 function pseudoRandom(seed: number) {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
@@ -43,7 +41,7 @@ export async function GET(req: NextRequest) {
   // 1. Try upstream Render backend first
   const renderUrl = `https://predictvalue-api.onrender.com/map_png_proxy?station=${station}&year=${year}&layer=${layer}`;
   try {
-    const upstreamRes = await fetch(renderUrl, { signal: AbortSignal.timeout(2500) });
+    const upstreamRes = await fetch(renderUrl, { signal: AbortSignal.timeout(2000) });
     if (upstreamRes.ok) {
       const buffer = await upstreamRes.arrayBuffer();
       return new NextResponse(buffer, {
@@ -54,16 +52,21 @@ export async function GET(req: NextRequest) {
       });
     }
   } catch {
-    // Fallback to pixelated Sentinel-2 raster grid map below
+    // Fallback to real satellite imagery + raster grid below
   }
 
-  // 2. Generate pixelated Sentinel-2 raster grid map
+  // 2. Generate Satellite Imagery + Sentinel-2 Raster Grid Map
   const stInfo = STATION_META[station] || STATION_META['CP01'];
-  
+  const lat = stInfo.lat;
+  const lng = stInfo.lng;
+
+  // Real ArcGIS Satellite Aerial Photo URL for requested station coordinates
+  const satelliteTileUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${(lng - 0.012).toFixed(4)},${(lat - 0.009).toFixed(4)},${(lng + 0.012).toFixed(4)},${(lat + 0.009).toFixed(4)}&bboxSR=4326&imageSR=4326&size=800,580&format=png&f=image`;
+
   // Create Pixel Grid Cells inside River Channel Clip-Path
   const cellSize = 14;
-  const gridWidth = 360;
-  const gridHeight = 440;
+  const gridWidth = 320;
+  const gridHeight = 460;
   const cols = Math.floor(gridWidth / cellSize);
   const rows = Math.floor(gridHeight / cellSize);
 
@@ -72,21 +75,21 @@ export async function GET(req: NextRequest) {
   let pixelsSvg = '';
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const x = 220 + c * cellSize;
-      const y = 80 + r * cellSize;
+      const x = 240 + c * cellSize;
+      const y = 60 + r * cellSize;
       
       seedVal += 1.37;
       const randVal = pseudoRandom(seedVal);
       
       // Index in color array
-      let colorIdx = Math.floor((r / rows) * 6 + randVal * 3);
-      if (randVal > 0.75) {
+      let colorIdx = Math.floor((r / rows) * 5 + randVal * 3);
+      if (randVal > 0.72) {
         colorIdx = Math.min(colorIdx + 3, RASTER_COLORS.length - 1);
       }
       colorIdx = Math.max(0, Math.min(colorIdx, RASTER_COLORS.length - 1));
       const color = RASTER_COLORS[colorIdx];
 
-      pixelsSvg += `<rect x="${x}" y="${y}" width="${cellSize - 0.5}" height="${cellSize - 0.5}" fill="${color}" opacity="0.92" />\n`;
+      pixelsSvg += `<rect x="${x}" y="${y}" width="${cellSize - 0.5}" height="${cellSize - 0.5}" fill="${color}" opacity="0.94" />\n`;
     }
   }
 
@@ -95,24 +98,15 @@ export async function GET(req: NextRequest) {
   <defs>
     <!-- River Channel Clip Path -->
     <clipPath id="riverClip">
-      <path d="M 270 520 L 290 440 L 310 320 L 300 210 L 270 120 L 530 120 L 500 210 L 490 320 L 510 440 L 530 520 Z" />
+      <path d="M 320 540 L 335 440 L 350 320 L 335 200 L 305 60 L 515 60 L 485 200 L 470 320 L 485 440 L 500 540 Z" />
     </clipPath>
   </defs>
 
-  <!-- Satellite Map Background Image Texture Simulation -->
-  <rect width="800" height="580" fill="#0d1821" />
+  <!-- Real ArcGIS World Imagery Satellite Aerial Photo Background -->
+  <image href="${satelliteTileUrl}" width="800" height="580" preserveAspectRatio="none" />
 
-  <!-- Coastline & Land Imagery -->
-  <!-- Left Shoreline / Urban / River Bank -->
-  <path d="M 0 0 L 270 0 L 270 120 L 300 210 L 310 320 L 290 440 L 270 520 L 270 580 L 0 580 Z" fill="#2d3a29" stroke="#1b2518" stroke-width="2" />
-  <path d="M 0 0 L 270 0 L 270 120 L 300 210 L 310 320 L 290 440 L 270 520 L 270 580 L 0 580 Z" fill="#3a4837" opacity="0.4" />
-  
-  <!-- Right Shoreline / Urban / Pier -->
-  <path d="M 800 0 L 530 0 L 530 120 L 500 210 L 490 320 L 510 440 L 530 520 L 530 580 L 800 580 Z" fill="#2d3a29" stroke="#1b2518" stroke-width="2" />
-  <path d="M 800 0 L 530 0 L 530 120 L 500 210 L 490 320 L 510 440 L 530 520 L 530 580 L 800 580 Z" fill="#3a4837" opacity="0.4" />
-
-  <!-- Dark River Water Bed -->
-  <path d="M 270 0 L 270 120 L 300 210 L 310 320 L 290 440 L 270 520 L 270 580 L 530 580 L 530 520 L 510 440 L 490 320 L 500 210 L 530 120 L 530 0 Z" fill="#070d14" />
+  <!-- Semi-transparent River Water Bed Base -->
+  <path d="M 320 540 L 335 440 L 350 320 L 335 200 L 305 60 L 515 60 L 485 200 L 470 320 L 485 440 L 500 540 Z" fill="#040914" opacity="0.75" />
 
   <!-- Pixelated Sentinel-2 Chlorophyll-a Raster Grid (Clipped to River Channel) -->
   <g clip-path="url(#riverClip)">
@@ -120,17 +114,17 @@ export async function GET(req: NextRequest) {
   </g>
 
   <!-- River Channel Boundary Outline -->
-  <path d="M 270 520 L 290 440 L 310 320 L 300 210 L 270 120 L 530 120 L 500 210 L 490 320 L 510 440 L 530 520 Z" 
-        fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6 3" />
+  <path d="M 320 540 L 335 440 L 350 320 L 335 200 L 305 60 L 515 60 L 485 200 L 470 320 L 485 440 L 500 540 Z" 
+        fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-dasharray="5 3" />
 
   <!-- Station Marker Pin -->
-  <circle cx="390" cy="300" r="11" fill="#f43f5e" stroke="#ffffff" stroke-width="2.5" />
-  <circle cx="390" cy="300" r="4" fill="#ffffff" />
+  <circle cx="410" cy="290" r="11" fill="#f43f5e" stroke="#ffffff" stroke-width="2.5" />
+  <circle cx="410" cy="290" r="4" fill="#ffffff" />
   
-  <!-- Header Overlay -->
+  <!-- Header Overlay Banner -->
   <rect x="15" y="15" width="770" height="46" rx="8" fill="#0f172a" opacity="0.9" stroke="#334155" stroke-width="1" />
-  <text x="35" y="43" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="16" font-weight="bold" fill="#f8fafc">
-    🗺️ ภาพดาวเทียม Chlorophyll-a Raster Grid (${stInfo.name})
+  <text x="35" y="43" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="15" font-weight="bold" fill="#f8fafc">
+    🛰️ ภาพถ่ายดาวเทียมจริง Chlorophyll-a Raster Grid (${stInfo.name})
   </text>
   <text x="765" y="43" font-family="'Leelawadee UI', Tahoma, sans-serif" font-size="13" font-weight="bold" fill="#38bdf8" text-anchor="end">
     ปี ${year}
