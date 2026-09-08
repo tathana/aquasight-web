@@ -283,8 +283,7 @@ export default function InteractiveMap({
                   ) : (
                     <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                       <RefreshCw size={20} className="animate-spin text-sky-400" />
-                      <span>กำลังโหลดภาพดาวเทียมจากเซิร์ฟเวอร์ Render...</span>
-                      <small style={{ color: '#64748b', fontSize: '10px' }}>หากเป็นครั้งแรก เซิร์ฟเวอร์ Render กำลังเริ่มทำงาน (Cold Start)</small>
+                      <span>กำลังโหลดประมวลผลภาพดาวเทียม…</span>
                     </div>
                   )}
                 </div>
