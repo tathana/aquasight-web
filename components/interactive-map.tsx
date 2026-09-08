@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MapPin, Layers, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, Layers, Calendar, ChevronDown, ChevronUp, Info, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export interface StationInfo {
@@ -295,6 +295,30 @@ export default function InteractiveMap({
                     alt={`Chlorophyll-a Map ${activeStation.id}`}
                     style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '250px', objectFit: 'contain' }}
                   />
+                </div>
+              </div>
+
+              {/* User-Friendly Explanation Card for General Public */}
+              <div style={{ padding: '10px 12px', background: '#0f172a', borderRadius: '8px', border: '1px solid #1e3a8a', fontSize: '11px' }}>
+                <div style={{ fontWeight: 'bold', color: '#93c5fd', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Info size={14} /> 💡 วิธีดูความหมายของค่าสีบนแผนที่
+                </div>
+                <p style={{ margin: '0 0 6px 0', color: '#cbd5e1', lineHeight: '1.5' }}>
+                  <strong>Chlorophyll-a (คลอโรฟิลล์-เอ):</strong> บอกความหนาแน่นของสาหร่ายในน้ำ ค่าต่ำหมายถึงน้ำใส ปริมาณสาหร่ายน้อย
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', color: '#94a3b8' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#440154', display: 'inline-block', flexShrink: 0 }}></span>
+                    <strong style={{ color: '#a78bfa' }}>สีม่วง/น้ำเงิน (&lt; 10 µg/L):</strong> น้ำใส ปริมาณสาหร่ายน้อย (คุณภาพดี)
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#21918c', display: 'inline-block', flexShrink: 0 }}></span>
+                    <strong style={{ color: '#38bdf8' }}>สีเขียว/ฟ้า (10 - 20 µg/L):</strong> ปริมาณปานกลาง มีสารอาหารสมบูรณ์
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fde725', display: 'inline-block', flexShrink: 0 }}></span>
+                    <strong style={{ color: '#facc15' }}>สีเหลือง (&gt; 25 µg/L):</strong> ปริมาณคลอโรฟิลล์สูง อาจเกิดปรากฏการณ์น้ำเปลี่ยนสี
+                  </span>
                 </div>
               </div>
             </div>
