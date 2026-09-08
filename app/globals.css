@@ -1,6 +1,4 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
 @custom-variant dark (&:is(.dark *));
 @theme inline{--color-background:var(--background);--color-foreground:var(--foreground);--color-primary:var(--primary);--color-primary-foreground:var(--primary-foreground);--color-border:var(--border);--color-input:var(--border);--color-ring:var(--primary);--color-muted:var(--muted);--color-muted-foreground:var(--muted-foreground);--color-accent:var(--accent);--color-accent-foreground:var(--foreground);--color-secondary:var(--muted);--color-secondary-foreground:var(--foreground);--radius-md:10px;--radius-lg:14px;--font-sans:'Leelawadee UI',Tahoma,Arial,sans-serif}
 :root{--background:#f3f7f9;--foreground:#173044;--primary:#076a75;--primary-foreground:#fff;--border:#d5e1e7;--muted:#edf3f5;--muted-foreground:#516879;--accent:#dceff0;color-scheme:light}.dark{--background:#102b38;--foreground:#ecf7fa;--primary:#72d1d3;--primary-foreground:#102b38;--border:#37515e;--muted:#203c49;--muted-foreground:#b0c6d1;--accent:#284b58}
@@ -15,4 +13,3 @@
   .station-detail-panel { width: 100%; border-left: none; border-top: 2px solid #38bdf8; padding: 12px; }
   .mobile-toggle-btn { display: block; }
 }
-

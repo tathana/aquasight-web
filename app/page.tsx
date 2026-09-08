@@ -212,7 +212,7 @@ export default function Home() {
             {/* Top Bar Switcher (Mobile Friendly) */}
             <div style={{ display: 'flex', gap: '4px', background: '#1e293b', padding: '3px', borderRadius: '8px' }}>
               <Button
-                variant={activeTab === 'chat' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
                 onClick={() => setActiveTab('chat')}
@@ -220,7 +220,7 @@ export default function Home() {
                 <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
               </Button>
               <Button
-                variant={activeTab === 'interactive-map' ? 'default' : 'ghost'}
+                variant="default"
                 size="sm"
                 style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
                 onClick={() => setActiveTab('interactive-map')}
@@ -251,7 +251,7 @@ export default function Home() {
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '2px', background: '#e2e8f0', padding: '3px', borderRadius: '8px' }}>
                 <Button
-                  variant={activeTab === 'chat' ? 'default' : 'ghost'}
+                  variant="default"
                   size="sm"
                   style={{ fontSize: '12px', padding: '4px 10px', height: '30px' }}
                   onClick={() => setActiveTab('chat')}
@@ -259,7 +259,7 @@ export default function Home() {
                   <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
                 </Button>
                 <Button
-                  variant={activeTab === 'interactive-map' ? 'ghost' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   style={{ fontSize: '12px', padding: '4px 10px', height: '30px' }}
                   onClick={() => setActiveTab('interactive-map')}
