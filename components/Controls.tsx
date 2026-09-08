@@ -7,27 +7,27 @@ import { WATER_QUALITY_CRITERIA, WaterParameter } from "@/lib/criteria";
    📍 Stations
 ================================ */
 const STATIONS = [
-  { value: "CP01", label: "CP01 – Chumphon" },
-  { value: "LS01", label: "LS01 – Lang Suan" },
-  { value: "LS03", label: "LS03 – Lang Suan" },
-  { value: "PN01", label: "PN01 – Phanang" },
-  { value: "SK01", label: "SK01 – Surat Coast" },
-  { value: "SK06", label: "SK06 – Surat Coast" },
-  { value: "TP01", label: "TP01 – Tha Phang" },
-  { value: "TP04", label: "TP04 – Tha Phang" },
-  { value: "TP011", label: "TP011 – Tha Phang" },
+  { value: "CP01", label: "CP01 – แม่น้ำชุมพร (Chumphon)" },
+  { value: "LS01", label: "LS01 – แม่น้ำหลังสวน ตอนล่าง (Lang Suan)" },
+  { value: "LS03", label: "LS03 – แม่น้ำหลังสวน ตอนบน (Lang Suan)" },
+  { value: "PN01", label: "PN01 – แม่น้ำปากพนัง (Phanang)" },
+  { value: "SK01", label: "SK01 – ชายฝั่งสุราษฎร์ธานี (Surat Coast)" },
+  { value: "SK06", label: "SK06 – ชายฝั่งสุราษฎร์ธานี (Surat Coast)" },
+  { value: "TP01", label: "TP01 – แม่น้ำตาปี ตอนล่าง (Tha Phang)" },
+  { value: "TP04", label: "TP04 – แม่น้ำพุมดวง (Tha Phang)" },
+  { value: "TP011", label: "TP011 – แม่น้ำตาปี ตอนบน (Tha Phang)" },
 ];
 
 /* ===============================
-   🧪 Parameters (ตรง backend)
+   🧪 Parameters
 ================================ */
 const PARAMETERS: { value: WaterParameter; label: string }[] = [
-  { value: "secchi", label: "Secchi Depth (ความโปร่งใสของน้ำ - m)" },
+  { value: "do", label: "Dissolved Oxygen (DO - ออกซิเจนละลาย mg/L)" },
   { value: "chlorophyll_a", label: "Chlorophyll-a (คลอโรฟิลล์-เอ - µg/L)" },
-  { value: "tsi", label: "Trophic State Index (TSI - ดัชนีสภาวะสารอาหาร)" },
+  { value: "tsi", label: "Trophic State Index (TSI - ดัชนีสารอาหาร)" },
+  { value: "secchi", label: "Secchi Depth (ความโปร่งใสของน้ำ - m)" },
   { value: "turbidity", label: "Turbidity (ความขุ่นของน้ำ - NTU)" },
   { value: "salinity", label: "Salinity (ความเค็มของน้ำ - ppt)" },
-  { value: "do", label: "Dissolved Oxygen (DO - ออกซิเจนละลาย mg/L)" },
   { value: "ph", label: "pH (ความเป็นกรด-ด่าง)" },
 ];
 
@@ -45,9 +45,6 @@ const PURPOSE_LABELS: Record<string, string> = {
   reuse: "🚰 น้ำบำบัด / นำกลับมาใช้ (Water Reuse)",
 };
 
-/* ===============================
-   🌊 Component
-================================ */
 export default function Controls({
   stations,
   setStations,
@@ -81,58 +78,63 @@ export default function Controls({
   );
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-[var(--color-ocean-card)] p-6 shadow-2xl space-y-6">
-      {/* ===============================
-          Header
-      ============================== */}
+    <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-6 shadow-2xl space-y-6">
+      {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-[var(--color-accent-glow)] flex items-center gap-2">
-          <span className="opacity-80">🎛️</span> Control Panel
+        <h2 className="text-lg font-bold text-sky-400 flex items-center gap-2">
+          <span>🎛️</span> แผงควบคุมและเลือกเกณฑ์การวิเคราะห์ (Control Panel)
         </h2>
-        <p className="text-sm text-slate-400 mt-1">
-          Configure stations, parameters, and analysis criteria.
+        <p className="text-xs text-slate-400 mt-1">
+          กำหนดสถานีตรวจวัด ตัวชี้วัดคุณภาพน้ำ และเลือกเกณฑ์การประเมินเพื่อเปรียบเทียบมาตรฐาน
         </p>
       </div>
 
-      {/* ===============================
-          Controls Grid
-      ============================== */}
+      {/* Controls Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* ---------- Stations ---------- */}
+        {/* ---------- Stations Selector ---------- */}
         <div className="relative">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-            <span>📍</span> Monitoring Stations
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
+            <span>📍</span> สถานีตรวจวัด ({stations.length} สถานี)
           </label>
 
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             className={`
-              w-full px-4 py-3 text-left text-sm rounded-lg border transition-all
+              w-full px-4 py-3 text-left text-sm rounded-xl border transition-all font-medium flex items-center justify-between
               ${open
-                ? 'border-[var(--color-accent-cyan)] ring-1 ring-[var(--color-accent-cyan)] bg-[var(--color-ocean-dark)] text-white'
-                : 'border-slate-700 bg-[var(--color-ocean-dark)] text-slate-300 hover:border-slate-500'}
+                ? 'border-sky-500 ring-2 ring-sky-500/20 bg-[#1e293b] text-white'
+                : 'border-slate-700 bg-[#1e293b] text-slate-200 hover:border-slate-500'}
             `}
           >
-            {stations.length > 0
-              ? `${stations.length} Selected`
-              : "Select Stations"}
+            <span>{stations.length > 0 ? `เลือกแล้ว ${stations.length} สถานี` : "เลือกสถานีตรวจวัด"}</span>
+            <span className="text-xs text-sky-400 font-bold">{open ? '▲' : '▼'}</span>
           </button>
 
           {open && (
             <div className="
               absolute z-50 mt-2 w-full
-              bg-[#020617] border border-slate-700
-              rounded-xl shadow-2xl shadow-black
-              max-h-64 overflow-y-auto
+              bg-[#0f172a] border border-slate-700
+              rounded-xl shadow-2xl shadow-black/80
+              max-h-72 overflow-y-auto p-2 space-y-1
             ">
+              <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 border-b border-slate-800 flex justify-between items-center">
+                <span>คลิกเพื่อเลือก/ยกเลิกสถานี</span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="text-sky-400 hover:text-white"
+                >
+                  ปิด ✕
+                </button>
+              </div>
+
               {STATIONS.map((s) => (
                 <label
                   key={s.value}
                   className="
-                    flex items-center gap-3 px-4 py-3
-                    hover:bg-[var(--color-ocean-dark)] cursor-pointer
-                    border-b border-white/5 last:border-0
+                    flex items-center gap-3 px-3 py-2.5
+                    hover:bg-slate-800/80 rounded-lg cursor-pointer
                     transition-colors
                   "
                 >
@@ -141,11 +143,10 @@ export default function Controls({
                     checked={stations.includes(s.value)}
                     onChange={() => toggleStation(s.value)}
                     className="
-                      accent-[var(--color-accent-cyan)]
-                      w-4 h-4 rounded border-slate-600 bg-transparent
+                      accent-sky-500 w-4 h-4 rounded border-slate-600 bg-transparent
                     "
                   />
-                  <span className={`text-sm ${stations.includes(s.value) ? 'text-white' : 'text-slate-400'}`}>
+                  <span className={`text-xs ${stations.includes(s.value) ? 'text-sky-300 font-bold' : 'text-slate-300'}`}>
                     {s.label}
                   </span>
                 </label>
@@ -153,24 +154,25 @@ export default function Controls({
             </div>
           )}
 
-          {/* Selected stations */}
+          {/* Selected Station Badges */}
           {stations.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex flex-wrap gap-1.5 mt-3">
               {stations.map((s) => (
                 <span
                   key={s}
                   className="
-                    text-xs bg-slate-800/80 border border-slate-700 text-[var(--color-accent-cyan)]
+                    text-[11px] bg-sky-950/80 border border-sky-600/50 text-sky-300
                     px-2.5 py-1 rounded-full
-                    flex items-center gap-1.5 font-medium
+                    flex items-center gap-1.5 font-bold
                   "
                 >
                   {s}
                   <button
+                    type="button"
                     onClick={() =>
                       setStations(stations.filter((x) => x !== s))
                     }
-                    className="hover:text-red-400 transition-colors"
+                    className="hover:text-rose-400 transition-colors"
                   >
                     ×
                   </button>
@@ -180,18 +182,18 @@ export default function Controls({
           )}
         </div>
 
-        {/* ---------- Parameter ---------- */}
+        {/* ---------- Water Parameter Selector ---------- */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-            <span>🧪</span> Water Parameter
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
+            <span>🧪</span> ตัวชี้วัดคุณภาพน้ำ (Parameter)
           </label>
           <div className="relative">
             <select
               className="
-                w-full appearance-none px-4 py-3 text-sm rounded-lg border
-                border-slate-700 bg-[var(--color-ocean-dark)] text-white
-                focus:border-[var(--color-accent-cyan)] focus:ring-1 focus:ring-[var(--color-accent-cyan)]
-                focus:outline-none transition-all
+                w-full appearance-none px-4 py-3 text-xs rounded-xl border
+                border-slate-700 bg-[#1e293b] text-white font-medium
+                focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20
+                focus:outline-none transition-all cursor-pointer
               "
               value={parameter}
               onChange={(e) =>
@@ -199,29 +201,29 @@ export default function Controls({
               }
             >
               {PARAMETERS.map((p) => (
-                <option key={p.value} value={p.value}>
+                <option key={p.value} value={p.value} className="bg-[#0f172a] text-slate-100 py-2">
                   {p.label}
                 </option>
               ))}
             </select>
-            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500">
+            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-sky-400 text-xs font-bold">
               ▼
             </div>
           </div>
         </div>
 
-        {/* ---------- Purpose ---------- */}
+        {/* ---------- Purpose Selector ---------- */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-            <span>🎯</span> Usage Criteria
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
+            <span>🎯</span> เกณฑ์อ้างอิงการใช้งาน (Criteria)
           </label>
           <div className="relative">
             <select
               className="
-                w-full appearance-none px-4 py-3 text-sm rounded-lg border
-                border-slate-700 bg-[var(--color-ocean-dark)] text-white
-                focus:border-[var(--color-accent-cyan)] focus:ring-1 focus:ring-[var(--color-accent-cyan)]
-                focus:outline-none transition-all
+                w-full appearance-none px-4 py-3 text-xs rounded-xl border
+                border-slate-700 bg-[#1e293b] text-white font-medium
+                focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20
+                focus:outline-none transition-all cursor-pointer
               "
               value={purpose}
               onChange={(e) =>
@@ -231,12 +233,12 @@ export default function Controls({
               }
             >
               {PURPOSE_OPTIONS.map((p) => (
-                <option key={p.value} value={p.value}>
+                <option key={p.value} value={p.value} className="bg-[#0f172a] text-slate-100 py-2">
                   {p.label}
                 </option>
               ))}
             </select>
-            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500">
+            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-sky-400 text-xs font-bold">
               ▼
             </div>
           </div>
