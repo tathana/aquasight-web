@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Waves, MapPin, MessageCircle, RotateCcw, ChevronRight, Map as MapIcon, Sparkles, BarChart2 } from 'lucide-react';
+import { ArrowUp, Waves, MapPin, MessageCircle, RotateCcw, ChevronRight, Map as MapIcon, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import InteractiveMap from '@/components/interactive-map';
 
@@ -127,22 +127,22 @@ export default function Home() {
       <aside className="guide">
         <div className="brand">
           <div className="brand-icon">
-            <Waves size={28} />
+            <Waves size={26} />
           </div>
           <div>
             Aqua Sight
-            <small>ผู้ช่วยข้อมูลคุณภาพน้ำ</small>
+            <small>ระบบข้อมูลคุณภาพน้ำภาคใต้</small>
           </div>
         </div>
 
         {/* Desktop View Switcher */}
-        <div style={{ padding: '8px 12px', background: '#0f172a', borderRadius: '10px', border: '1px solid #1e293b', margin: '16px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>เลือกโหมดการทำงาน</span>
+        <div style={{ padding: '8px 10px', background: '#091822', borderRadius: '12px', border: '1px solid #1a384c', margin: '18px 0 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <span style={{ fontSize: '11px', color: '#789cb0', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>เลือกโหมดการทำงาน</span>
           <div style={{ display: 'flex', gap: '6px' }}>
             <Button
               variant={activeTab === 'chat' ? 'default' : 'ghost'}
               size="sm"
-              style={{ flex: 1, fontSize: '12px', padding: '6px' }}
+              style={{ flex: 1, fontSize: '12px', padding: '6px', background: activeTab === 'chat' ? '#0284c7' : 'transparent', color: '#ffffff' }}
               onClick={() => setActiveTab('chat')}
             >
               <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชทบอท
@@ -150,7 +150,7 @@ export default function Home() {
             <Button
               variant={activeTab === 'interactive-map' ? 'default' : 'ghost'}
               size="sm"
-              style={{ flex: 1, fontSize: '12px', padding: '6px' }}
+              style={{ flex: 1, fontSize: '12px', padding: '6px', background: activeTab === 'interactive-map' ? '#0284c7' : 'transparent', color: activeTab === 'interactive-map' ? '#ffffff' : '#94a3b8' }}
               onClick={() => setActiveTab('interactive-map')}
             >
               <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
@@ -167,31 +167,29 @@ export default function Home() {
               key={title}
               disabled={busy}
               onClick={() => {
-                if (title === 'ดูแผนที่') {
-                  send(title);
-                } else {
-                  send(title);
-                }
+                if (activeTab !== 'chat') setActiveTab('chat');
+                send(title);
               }}
             >
               <span>
                 <strong>{title}</strong>
                 <small>{desc}</small>
               </span>
-              <ChevronRight size={16} />
+              <ChevronRight size={15} style={{ color: '#38bdf8' }} />
             </Button>
           ))}
         </nav>
 
         <div className="guide-note">
-          <MapPin size={18} />
+          <MapPin size={18} style={{ color: '#38bdf8', flexShrink: 0, marginTop: '2px' }} />
           <p>
             9 สถานีภาคใต้
             <br />
             <span>เลือกสถานีและปีผ่านบทสนทนา</span>
           </p>
         </div>
-        <Button variant="ghost" className="about" disabled={busy} onClick={() => send('เกี่ยวกับ')}>
+        
+        <Button variant="ghost" className="about" disabled={busy} onClick={() => { if (activeTab !== 'chat') setActiveTab('chat'); send('เกี่ยวกับ'); }}>
           เกี่ยวกับ Aqua Sight
         </Button>
       </aside>
@@ -200,33 +198,37 @@ export default function Home() {
       {activeTab === 'interactive-map' ? (
         <section className="chat" style={{ padding: 0, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
           {/* Header with Mode Toggle */}
-          <header style={{ padding: '10px 16px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Waves size={22} className="text-cyan-400" />
+          <header style={{ padding: '12px 24px', background: '#0f172a', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ background: '#0369a1', padding: '8px', borderRadius: '10px', color: '#fff', display: 'flex' }}>
+                <Waves size={20} />
+              </div>
               <div>
                 <span className="eyebrow" style={{ color: '#38bdf8', fontSize: '10px' }}>AQUA SIGHT MAP</span>
-                <h1 style={{ fontSize: '16px', margin: 0, color: '#f8fafc' }}>แผนที่โต้ตอบ 9 สถานี</h1>
+                <h1 style={{ fontSize: '18px', margin: 0, color: '#f8fafc' }}>แผนที่โต้ตอบ 9 สถานีตรวจวัด</h1>
               </div>
             </div>
             
-            {/* Top Bar Switcher (Mobile Friendly) */}
-            <div style={{ display: 'flex', gap: '4px', background: '#1e293b', padding: '3px', borderRadius: '8px' }}>
-              <Button
-                variant="ghost"
-                size="sm"
-                style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
-                onClick={() => setActiveTab('chat')}
-              >
-                <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
-                onClick={() => setActiveTab('interactive-map')}
-              >
-                <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
-              </Button>
+            {/* Top Bar Switcher */}
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '3px', background: '#1e293b', padding: '3px', borderRadius: '10px' }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  style={{ fontSize: '12px', padding: '4px 12px', height: '30px', color: '#94a3b8' }}
+                  onClick={() => setActiveTab('chat')}
+                >
+                  <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  style={{ fontSize: '12px', padding: '4px 12px', height: '30px', background: '#0284c7', color: '#fff' }}
+                  onClick={() => setActiveTab('interactive-map')}
+                >
+                  <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
+                </Button>
+              </div>
             </div>
           </header>
 
@@ -241,33 +243,14 @@ export default function Home() {
         </section>
       ) : (
         <section className="chat" aria-label="บทสนทนา Aqua Sight">
-          <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+          <header>
             <div>
               <span className="eyebrow">AQUA SIGHT CHAT</span>
               <h1>คุยเรื่องน้ำ</h1>
             </div>
             
-            {/* Mode Switcher Bar */}
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '2px', background: '#e2e8f0', padding: '3px', borderRadius: '8px' }}>
-                <Button
-                  variant="default"
-                  size="sm"
-                  style={{ fontSize: '12px', padding: '4px 10px', height: '30px' }}
-                  onClick={() => setActiveTab('chat')}
-                >
-                  <MessageCircle size={14} style={{ marginRight: '4px' }} /> แชท
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  style={{ fontSize: '12px', padding: '4px 10px', height: '30px' }}
-                  onClick={() => setActiveTab('interactive-map')}
-                >
-                  <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่
-                </Button>
-              </div>
-
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {/* Header Reset Button */}
               <Button
                 variant="outline"
                 size="sm"
@@ -277,24 +260,25 @@ export default function Home() {
                   setContext({});
                   setInput('');
                 }}
+                style={{ fontSize: '13px', borderRadius: '10px', height: '36px', borderColor: '#cbd5e1' }}
               >
-                <RotateCcw size={14} /> <span className="hidden sm:inline">เริ่มใหม่</span>
+                <RotateCcw size={14} style={{ marginRight: '4px' }} /> <span>เริ่มใหม่</span>
               </Button>
             </div>
           </header>
 
           <div className="context-bar">
             <span>
-              <MessageCircle size={16} /> แชทข้อมูลคุณภาพน้ำ
+              <MessageCircle size={16} style={{ color: '#0284c7' }} /> แชทข้อมูลคุณภาพน้ำ
             </span>
-            <span>
-              {context.station || 'ยังไม่ได้เลือกสถานี'}
-              {context.year ? ` · ${context.year}` : ''}
+            <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>
+              {context.station ? `สถานี ${context.station}` : 'ยังไม่ได้เลือกสถานี'}
+              {context.year ? ` · ปี ${context.year}` : ''}
             </span>
           </div>
 
           <div className="conversation" role="log" aria-live="polite" aria-relevant="additions">
-            <div className="date-divider">Aqua Sight พร้อมช่วยค้นหาข้อมูล</div>
+            <div className="date-divider">Aqua Sight พร้อมช่วยค้นหาและประมวลผลข้อมูล</div>
             {messages.map((m) => (
               <article key={m.id} className={`message ${m.role}`}>
                 {m.role === 'bot' && (
@@ -333,8 +317,8 @@ export default function Home() {
 
           <footer>
             {/* Mobile Scrollable Quick Menu Pills */}
-            <div className="mobile-menu" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}>
-              <Button variant="outline" size="sm" onClick={() => setActiveTab('interactive-map')} style={{ background: '#38bdf8', color: '#0f172a', fontWeight: 'bold' }}>
+            <div className="mobile-menu">
+              <Button variant="outline" size="sm" onClick={() => setActiveTab('interactive-map')} style={{ background: '#0284c7', color: '#ffffff', fontWeight: 'bold', border: 'none' }}>
                 <MapIcon size={14} style={{ marginRight: '4px' }} /> แผนที่ 9 สถานี
               </Button>
               {menus.map(([title]) => (
@@ -352,10 +336,10 @@ export default function Home() {
             >
               <input aria-label="ข้อความถึง Aqua Sight" maxLength={2000} value={input} onChange={(e) => setInput(e.target.value)} placeholder="พิมพ์ข้อความ เช่น Summary CP01 2026" />
               <Button type="submit" disabled={busy || !input.trim()} aria-label="ส่งข้อความ">
-                <ArrowUp size={22} />
+                <ArrowUp size={20} />
               </Button>
             </form>
-            <p>ข้อมูลตามช่วงเวลาที่แหล่งข้อมูลมีให้ · ผลพยากรณ์แสดงแยกจากข้อมูลย้อนหลัง</p>
+            <p>ข้อมูลประมวลผลจากภาพดาวเทียมและแบบจำลองพยากรณ์ · ไม่ใช่การรับรองความปลอดภัยของน้ำโดยตรง</p>
           </footer>
         </section>
       )}
