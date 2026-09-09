@@ -68,7 +68,7 @@ function formatXAxisTick(dateStr: string): string {
     const year = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10);
     const thaiYearShort = (year + 543) % 100;
-    return `${THAI_MONTHS_SHORT[month - 1]} '${thaiYearShort}`;
+    return `${THAI_MONTHS_SHORT[month - 1]} ${thaiYearShort}`;
   }
   return dateStr;
 }
@@ -267,6 +267,51 @@ export default function WaterQualityChart({
     return { forecastStart: start, forecastEnd: end };
   }, [mergedData, series]);
 
+  /* ===============================
+     Dynamic Y-Axis Domain calculation
+     Includes all data + criteria lines + padding
+  ============================== */
+  const yDomain = useMemo(() => {
+    let minVal = Infinity;
+    let maxVal = -Infinity;
+
+    mergedData.forEach((row) => {
+      series.forEach((s) => {
+        const act = row[`${s.station}_actual`];
+        const fc = row[`${s.station}_forecast`];
+        if (typeof act === "number" && !isNaN(act)) {
+          if (act < minVal) minVal = act;
+          if (act > maxVal) maxVal = act;
+        }
+        if (typeof fc === "number" && !isNaN(fc)) {
+          if (fc < minVal) minVal = fc;
+          if (fc > maxVal) maxVal = fc;
+        }
+      });
+    });
+
+    if (criterion?.min !== undefined) {
+      minVal = Math.min(minVal, criterion.min);
+      maxVal = Math.max(maxVal, criterion.min);
+    }
+    if (criterion?.max !== undefined) {
+      minVal = Math.min(minVal, criterion.max);
+      maxVal = Math.max(maxVal, criterion.max);
+    }
+
+    if (!isFinite(minVal) || !isFinite(maxVal)) {
+      return ["auto", "auto"] as const;
+    }
+
+    const diff = maxVal - minVal;
+    const padding = Math.max(diff * 0.12, 0.5);
+
+    const lower = minVal >= 0 && minVal - padding <= 0 ? 0 : Math.round((minVal - padding) * 10) / 10;
+    const upper = Math.round((maxVal + padding) * 10) / 10;
+
+    return [lower, upper] as const;
+  }, [mergedData, series, criterion]);
+
   if (series.length === 0 || mergedData.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-800 bg-[#0f172a] p-10 text-center text-slate-400 space-y-2">
@@ -336,8 +381,12 @@ export default function WaterQualityChart({
               stroke="#334155"
               tickLine={false}
               axisLine={{ stroke: "#334155" }}
-              domain={["auto", "auto"]}
-              width={45}
+              domain={yDomain}
+              tickFormatter={(val) => {
+                if (typeof val !== "number") return val;
+                return val >= 10 ? val.toFixed(0) : val.toFixed(1);
+              }}
+              width={48}
             />
 
             {/* Custom Interactive Tooltip */}
@@ -387,46 +436,46 @@ export default function WaterQualityChart({
               />
             )}
 
-            {/* Station Lines */}
-            {series.map((s, i) => {
+            {/* Station Lines - Flat mapped directly to LineChart */}
+            {series.flatMap((s, i) => {
               const color =
                 STATION_PALETTE[s.station] ||
                 FALLBACK_COLORS[i % FALLBACK_COLORS.length];
 
-              return (
-                <Fragment key={s.station}>
-                  {/* Actual Solid Line */}
-                  <Line
-                    type="monotone"
-                    dataKey={`${s.station}_actual`}
-                    stroke={color}
-                    strokeWidth={2.2}
-                    dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
-                    activeDot={{ r: 5.5, stroke: "#ffffff", strokeWidth: 2 }}
-                    name={`${s.station} (ค่าจริง)`}
-                    connectNulls={true}
-                    animationDuration={1000}
-                    animationEasing="ease-in-out"
-                  />
+              return [
+                /* Actual Solid Line */
+                <Line
+                  key={`${s.station}_actual`}
+                  type="monotone"
+                  dataKey={`${s.station}_actual`}
+                  stroke={color}
+                  strokeWidth={2.2}
+                  dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
+                  activeDot={{ r: 5.5, stroke: "#ffffff", strokeWidth: 2 }}
+                  name={`${s.station} (ค่าจริง)`}
+                  connectNulls={true}
+                  animationDuration={1000}
+                  animationEasing="ease-in-out"
+                />,
 
-                  {/* Forecast Dashed Line */}
-                  <Line
-                    type="monotone"
-                    dataKey={`${s.station}_forecast`}
-                    stroke={color}
-                    strokeWidth={2}
-                    strokeDasharray="4 4"
-                    strokeOpacity={0.8}
-                    dot={false}
-                    activeDot={{ r: 4.5, stroke: "#ffffff", strokeWidth: 1.5 }}
-                    name={`${s.station} (พยากรณ์)`}
-                    legendType="none"
-                    connectNulls={true}
-                    animationDuration={1000}
-                    animationEasing="ease-in-out"
-                  />
-                </Fragment>
-              );
+                /* Forecast Dashed Line */
+                <Line
+                  key={`${s.station}_forecast`}
+                  type="monotone"
+                  dataKey={`${s.station}_forecast`}
+                  stroke={color}
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.8}
+                  dot={false}
+                  activeDot={{ r: 4.5, stroke: "#ffffff", strokeWidth: 1.5 }}
+                  name={`${s.station} (พยากรณ์)`}
+                  legendType="none"
+                  connectNulls={true}
+                  animationDuration={1000}
+                  animationEasing="ease-in-out"
+                />,
+              ];
             })}
 
             {/* Criteria Threshold Reference Lines */}
