@@ -377,6 +377,8 @@ export default function Home() {
                   series={dashboardSeries}
                   parameter={dashboardParameter}
                   purpose={dashboardPurpose}
+                  unit={PARAM_UNITS[dashboardParameter]}
+                  parameterName={PARAM_NAMES[dashboardParameter]}
                 />
 
                 {(() => {
